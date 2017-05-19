@@ -31,8 +31,6 @@ class LoginController extends Controller
 
     /**
      * Create a new controller instance.
-     *
-     * @return void
      */
     public function __construct()
     {
@@ -53,5 +51,18 @@ class LoginController extends Controller
         Session::regenerate();
 
         return redirect('/login');
+    }
+
+    /**
+     * Get the needed authorization credentials from the request.
+     * This method will override the method of super class AuthenticatesUser.
+     * This method checks if user activated his account via email verification.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    protected function credentials(Request $request)
+    {
+        return['email'=>$request->{$this->username()},'password'=>$request->password, 'status'=>'1'];
     }
 }

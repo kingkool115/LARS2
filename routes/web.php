@@ -28,3 +28,6 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::get('/lectures', 'LectureController@show_lectures');
 
 Route::post('/logout', 'Auth\LoginController@logout')->name('logout');
+
+// verify E-Mail when register new user account
+Route::get('verify/{email}/{verifyToken}', 'Auth\RegisterController@sendEmailDone')->name('sendEmailDone');

@@ -62,7 +62,10 @@
 
                         <div class="form-group">
                             <div class="col-md-6 col-md-offset-4">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="button" method="GET" onclick="window.location.href='{{ route('login') }}'" class="btn btn-primary">
+                                    Go back to Login
+                                </button>
+                                <button type="submit" class="btn btn-primary" style="float: right">
                                     Register
                                 </button>
                             </div>
