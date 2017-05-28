@@ -76,7 +76,7 @@ class Lecture
 
     public function getChapterById($id) {
         foreach ($this->getChapters() as $chapter) {
-            if ($chapter.getId() == $id) {
+            if ($chapter->getId() == $id) {
                 return $chapter;
             }
         }

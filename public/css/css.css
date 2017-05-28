@@ -8,6 +8,35 @@ body{
     background-color: #f5f8fa;
 }
 
+#very_first_table_row{
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #7da8c3;
+}
+
+tr th{
+    font-family: "Raleway", sans-serif;
+    padding: 10px 10px 10px 10px;
+}
+
+#questoin_column{
+}
+
+.questions_table{
+    border-collapse: collapse;
+    text-align: left;
+    align: center;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.survey_table_content{
+ background-color: #f5f8fa;
+}
+
+.slide_numbers{
+    text-align: center;
+}
 .topnav {
     font-family: "Fira Sans", sans-serif;
     overflow: hidden;

@@ -31,3 +31,12 @@ Route::post('/logout', 'Auth\LoginController@logout')->name('logout');
 
 // verify E-Mail when register new user account
 Route::get('verify/{email}/{verifyToken}', 'Auth\RegisterController@sendEmailDone')->name('sendEmailDone');
+
+// verify E-Mail when register new user account
+Route::get('/survey/{survey_id}', 'SurveyController@showQuestions')->name('survey');
+
+// check if a slide number for a certain survey already exists.
+Route::get('/survey/{survey_id}/slide_number_exists/{slide_number}', 'SurveyController@slideNumberExists')->name('slide_number_exists');
+
+//
+Route::get('/survey/{survey_id}/slide_number/{slide_number}', 'QuestionController@editQuestion')->name('question');

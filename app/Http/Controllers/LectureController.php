@@ -64,23 +64,23 @@ class LectureController extends Controller
 
                             // iterate through $result
                             foreach ($result as $lecture_of_results) {
-                                
+
                                 // if lecture already exists in our result list, then just
-                                if ($lecture_of_results.getId() == $lecture['id']) {
+                                if ($lecture_of_results->getId() == $lecture['id']) {
 
                                     // if chapter already exists -> only a new survey has to be added to the chapter.
-                                    if ($lecture_of_results.check_if_chapter_exists(chapter['id'])) {
+                                    if ($lecture_of_results->check_if_chapter_exists($chapter['id'])) {
                                         $result_survey = new Survey($survey['id'], $survey['name'], null);
-                                        $lecture_of_results.getChapterById(chapter['id'].addSurvey($result_survey));
-                                        break 2;    // break 3 loops -> continue with nex survey of $all_surveys
+                                        $lecture_of_results->getChapterById($chapter['id'])->addSurvey($result_survey);
+                                        break 2;    // break 2 loops -> continue with nex survey of $all_surveys
 
                                     // if chapter does not exist in this lecture -> create new chapter with survey and
                                     // add it to existing lecture in result list.
                                     } else {
                                         $result_survey = new Survey($survey['id'], $survey['name'], null);
                                         $result_chapter = new Chapter($chapter['id'], $chapter['name'], $result_survey);
-                                        $lecture_of_results.addChapter($result_chapter);
-                                        break 2;    // break 3 loops -> continue with nex survey of $all_surveys
+                                        $lecture_of_results->addChapter($result_chapter);
+                                        break 2;    // break 2 loops -> continue with nex survey of $all_surveys
                                     }
                                 }
                             }
@@ -95,11 +95,10 @@ class LectureController extends Controller
                     }
                 }
             }
-            Debugbar::info($result);
         }
-        //$survey = (array)$all_surveys;
-        //Debugbar::info($survey);
-        return view('main');
+
+        Debugbar::info($result);
+        return view('main', ['lectures' => $result]);
     }
 
     /**
