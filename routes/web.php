@@ -38,5 +38,12 @@ Route::get('/survey/{survey_id}', 'SurveyController@showQuestions')->name('surve
 // check if a slide number for a certain survey already exists.
 Route::get('/survey/{survey_id}/slide_number_exists/{slide_number}', 'SurveyController@slideNumberExists')->name('slide_number_exists');
 
-//
+// edit a question
 Route::get('/survey/{survey_id}/slide_number/{slide_number}', 'QuestionController@editQuestion')->name('question');
+
+
+Route::post('upload_image', function(){
+    request()->file('question-image')->store('question-images');
+
+    return back();
+});

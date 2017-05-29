@@ -12,7 +12,9 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/css.css') }}" rel="stylesheet">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
     <title>LARS - Home </title>
@@ -75,20 +77,30 @@
     @endforeach
     </table>
 
-        <table>
+        <table id="textfield-new-slide">
             <tr>
                 <th><input type="text" name="new_slide_number"></th>
-                <th><button type="button" onclick="createNewSlide()">Fubarrr</button></th>
+                <th>
+                    <button type="submit" class="btn btn-primary" onclick="createNewSlide()">Create</button>
+                </th>
             </tr>
         </table>
+            <div id="error-message"></div>
         <script>
             function createNewSlide() {
                 var new_slide_number = document.getElementsByName("new_slide_number")[0].value;
                 $.getJSON( "{{Request::url()}}" + "/slide_number_exists/" + new_slide_number, function( data ) {
-                    if (data['slideNumberExists']) {
-                        window.alert("slide number " + new_slide_number + " already exists for this survey.");
+                    if (!Number.isInteger(parseInt(new_slide_number))) {
+                    document.getElementById("error-message").innerHTML = "'" + new_slide_number + "' is not a numbver.";
+                    document.getElementById("error-message").display = display;
+                    }
+                    else if (data['slideNumberExists']) {
+                        document.getElementById("error-message").innerHTML = "slide number " + new_slide_number + " already exists for this survey.";
+                        document.getElementById("error-message").display = display;
+                        //window.alert("slide number " + new_slide_number + " already exists for this survey.");
                     } else {
-
+                        document.getElementById("error-message").innerHTML = "";
+                        window.location.href = "/survey/{{$question['survey_id']}}/slide_number/" + new_slide_number;
                     }
                 });
             }

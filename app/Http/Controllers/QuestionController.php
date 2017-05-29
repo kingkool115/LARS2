@@ -23,7 +23,7 @@ class QuestionController extends Controller
         $this->middleware('auth');
     }
 
-    /**
+    /** 
      * Show the application dashboard.
      *
      * @return \Illuminate\Http\Response

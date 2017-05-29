@@ -12,6 +12,7 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('css/css.css') }}" rel="stylesheet">
 
     <title>LARS - Home </title>
@@ -50,6 +51,30 @@
     @else
         <div id="topic">Welcome to your QUESTION page!!</div>
     @endif
+    <form>
+        <input type="radio" name="question-type" value="multiple-choice">Multiple choice question<br>
+        <input type="radio" name="question-type" value="text-response">Text respone question
+    </form>
+
+        <form id="upload-image-row" action="/upload_image" method="post" enctype="multipart/form-data">
+            <div id="question-form" class="form-group">
+                <!-- Question -->
+                <label for="question" class="col-md-4 control-label">Question</label>
+                <textarea rows="4" cols="50" class="form-control" name="question" required autofocus></textarea>
+
+                <!-- Image Upload -->
+                {{ csrf_field() }}
+                <label id="image-upload" for="question-image" class="col-md-4 control-label">Select image</label><br/>
+                <input type="file" name="question-image" id="fileToUpload">
+
+                <!-- Correct answer -->
+                <label id="correct-answer" for="correct_answer" class="col-md-4 control-label">Correct answer</label>
+                <input type="text" class="form-control" name="correct_answer">
+
+                <!-- Submit Button -->
+                <button id="submit-question-button"class="btn btn-primary" type="submit"> Create Question</button>
+            </div>
+        </form>
 </main>
 
 </body>
