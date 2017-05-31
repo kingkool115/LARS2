@@ -24,25 +24,22 @@ class QuestionController extends Controller
     }
 
     /** 
-     * Show the application dashboard.
+     * This function routes to /survey/{survey_id}/slide_number/{slide_number}
+     * TODO: Wenn der Link direkt eingegeben wird, dann muss überprüft werden, ob es für dieses survey_id nicht schon dieselbe slide_number gibt.
      *
-     * @return \Illuminate\Http\Response
+     * @param $survey_id this question belongs to.
+     * @param $slide_number of powerpoint presentation this question belongs to.
+     * @return view question.blade.php
      */
     public function editQuestion($survey_id, $slide_number)
     {
         // TODO: check if survey belongs to correct professor.
-        $all_questions = DB::table('questions')->select('id', 'question', 'slide_number')->where('survey_id', $survey_id)->orderBy('slide_number')->get();
-        //$foo = (array)$all_questions;
+        $survey_name = (array) DB::table('survey')->select('name')->where('id', $survey_id)->get()[0];
+        $survey_name = $survey_name['name'];
+
         //Debugbar::info($all_questions);
 
-        $result = [];
-        foreach ($all_questions as $question) {
-            $result[] = (array)$question;
-        }
-
-
-        Debugbar::info($result);
-        return view('question', ['result' => $result]);
+        return view('question', compact('survey_name', 'slide_number', 'survey_id'));
 
     }
 }

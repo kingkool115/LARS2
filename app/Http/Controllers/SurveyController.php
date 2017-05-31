@@ -34,14 +34,15 @@ class SurveyController extends Controller
     {
         // TODO: check if survey belongs to correct professor.
         $all_questions = DB::table('questions')->select('id', 'survey_id', 'question', 'slide_number')->where('survey_id', $survey_id)->orderBy('slide_number')->get();
+        $survey_name = (array) DB::table('survey')->select('name')->where('id', $survey_id)->get()[0];
 
         $result = [];
         foreach ($all_questions as $question) {
             $result[] = (array) $question;
         }
 
-        Debugbar::info($result);
-        return view('survey', ['result' => $result]);
+        Debugbar::warning($survey_name['name']);
+        return view('survey', compact('result', 'survey_name'));
     }
 
     /**

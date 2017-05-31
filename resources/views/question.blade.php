@@ -31,7 +31,7 @@
     </span>
     <div class="topnav">
         @if (!Auth::guest())
-            <a class="left-header-buttons" href="#home">My Lectures</a>
+            <a class="left-header-buttons" href="{{ route('lectures') }}">My Lectures</a>
             <a href="#news">Create new survey</a>
             <!-- Handle Logout Button -->
             <a id="logout_button" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -49,32 +49,138 @@
     @if (Auth::guest())
         @yield('content')
     @else
-        <div id="topic">Welcome to your QUESTION page!!</div>
-    @endif
-    <form>
-        <input type="radio" name="question-type" value="multiple-choice">Multiple choice question<br>
-        <input type="radio" name="question-type" value="text-response">Text respone question
+        <div id="topic">
+            Survey '{{$survey_name}}'<br/>
+            Edit question for slide number {{$slide_number}}
+        </div>
+
+    <!-- Radion Buttons to select type of question -->
+    <form onclick="displayCorrectForm()">
+        <input type="radio" id="multiple-choice-radio" name="question-type" value="multiple-choice" checked>Multiple choice question<br>
+        <input type="radio" id="text-response-radio" name="question-type" value="text-response">Text respone question
+    </form>
+    <br>
+    <br>
+    <br>
+    <br>
+
+    <!-- Form to create a text response question -->
+    <form id="text-response-form" action="/create_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}" method="post" enctype="multipart/form-data">
+        <div class="form-group question-form">
+            <!-- Question -->
+            <label for="question">Question</label>
+            <textarea rows="4" cols="50" class="form-control" name="question" required autofocus></textarea>
+
+            <!-- Image Upload -->
+            {{ csrf_field() }}
+            <label id="image-upload" for="question-image">Select image</label><br>
+            <input type="file" name="question-image" id="fileToUpload"><br><br>
+
+            <!-- Correct answer -->
+            <label id="correct-answer" for="correct_answer">Correct answer</label>
+            <input type="text" class="form-control" name="correct-answer" required autofocus><br><br>
+
+            <!-- Choose where to show the results of the students -->
+            <label for="when-to-show-results"> When do you want to display the results of the question?</label><br>
+            <input type="radio" name="when-to-show-results" value="next-slide" required> Show results on next slide<br>
+            <input type="radio" name="when-to-show-results" value="end-of-chapter"> Show results at the end of chapter<br><br>
+
+            <!-- Submit Button -->
+            <button id="submit-question-button"class="btn btn-primary" type="submit"> Create Question</button>
+        </div>
     </form>
 
-        <form id="upload-image-row" action="/upload_image" method="post" enctype="multipart/form-data">
-            <div id="question-form" class="form-group">
-                <!-- Question -->
-                <label for="question" class="col-md-4 control-label">Question</label>
-                <textarea rows="4" cols="50" class="form-control" name="question" required autofocus></textarea>
+    <!-- Form to create a multiple choice question -->
+    <form id="multiple-choice-form" style="display: none" action="/create_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}" method="post" enctype="multipart/form-data">
+        <div class="form-group question-form">
+            <!-- Question -->
+            <label for="question">Question</label>
+            <textarea rows="4" cols="50" class="form-control" name="question" required autofocus></textarea>
 
-                <!-- Image Upload -->
-                {{ csrf_field() }}
-                <label id="image-upload" for="question-image" class="col-md-4 control-label">Select image</label><br/>
-                <input type="file" name="question-image" id="fileToUpload">
+            <!-- Image Upload -->
+            {{ csrf_field() }}
+            <label id="image-upload" for="question-image">Select image</label><br/>
+            <input type="file" name="question-image" id="fileToUpload"><br><br>
 
-                <!-- Correct answer -->
-                <label id="correct-answer" for="correct_answer" class="col-md-4 control-label">Correct answer</label>
-                <input type="text" class="form-control" name="correct_answer">
+            <!-- Max. 8 possible answers -->
+            <label for="correct-answer"> Create your possible answers and mark the correct ones</label><br><br>
+            @for ($x = 1; $x < 8; $x++)
+                <label id="correct_answer_{{$x}}" for="correct_answer">Answer {{$x}}</label>
+                <div style="float: right">
+                    <input type="checkbox" name="correct-answers" id="correct_answer_checkbox_{{$x}}"> correct
+                </div>
+                <textarea rows="1" cols="50" class="form-control" name="possible_answer" id="possible_answer_{{$x}}"></textarea>
+                <br>
+            @endfor
+            <br>
+            <br>
 
-                <!-- Submit Button -->
-                <button id="submit-question-button"class="btn btn-primary" type="submit"> Create Question</button>
-            </div>
-        </form>
+            <!-- Choose where to show the results of the students -->
+            <label for="when-to-show-results"> When do you want to display the results of the question?</label><br>
+            <input type="radio" name="when-to-show-results" value="next-slide" required> Show results on next slide<br>
+            <input type="radio" name="when-to-show-results" value="end-of-chapter"> Show results at the end of chapter<br><br>
+
+            <!-- Error Message if answers not filled out correctly-->
+            <div id="error-message"></div>
+
+            <!-- Submit Button -->
+            <button id="submit-question-button"class="btn btn-primary" type="submit" onclick="return validateQuestions()">
+                Create Question
+            </button>
+        </div>
+    </form>
+
+
+    <script>
+        function validateQuestions() {
+            var correct_answers = 0;
+            var checked_empty_answer_as_correct = false;
+            for (var x = 1; x < document.getElementsByName('correct-answers').length; x++) {
+                var possible_answer = document.getElementById('possible_answer_' + x).value;
+                var is_checkbox_checked = document.getElementById('correct_answer_checkbox_' + x).checked;
+                if (possible_answer.trim().length == 0 && is_checkbox_checked) {
+                    checked_empty_answer_as_correct = true;
+                }
+                if (possible_answer.trim().length > 0 && is_checkbox_checked) {
+                    correct_answers += 1;
+                }
+            }
+
+            if (correct_answers == 0) {
+                document.getElementById("error-message").innerHTML = "You have to set at least one correct answer."
+                return false;
+            }
+            if (checked_empty_answer_as_correct) {
+                document.getElementById("error-message").innerHTML = "You can not mark an empty answer as correct."
+                return false;
+            }
+            if (correct_answers > 0) {
+                // validation ok
+                document.getElementById("error-message").innerHTML = "";
+                return true;
+            }
+        }
+
+        function displayCorrectForm() {
+            var multiple_choice_radio_button = document.getElementById('multiple-choice-radio');
+
+            var text_response_form = document.getElementById('text-response-form');
+            var multiple_choice_form = document.getElementById('multiple-choice-form');
+
+            //alert('multiple choice checked: ' + is_multiple_choice_radio_button_checked)
+            if (multiple_choice_radio_button.checked) {
+                multiple_choice_form.style.display = "initial";
+                text_response_form.style.display = "none";
+            } else {
+                multiple_choice_form.style.display = "none";
+                text_response_form.style.display = "initial";
+            }
+            document.getElementById('multiple-choice-radio')
+        };
+        displayCorrectForm();
+    </script>
+
+    @endif
 </main>
 
 </body>

@@ -12,6 +12,8 @@
 */
 
 use \Illuminate\Support\Facades\Auth;
+use Barryvdh\Debugbar\Facade as Debugbar;
+use Illuminate\Support\Facades\Input;
 
 Route::get('/', function () {
     if(Auth::guest())
@@ -25,7 +27,7 @@ Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
 
-Route::get('/lectures', 'LectureController@show_lectures');
+Route::get('/lectures', 'LectureController@show_lectures')->name('lectures');
 
 Route::post('/logout', 'Auth\LoginController@logout')->name('logout');
 
@@ -42,8 +44,20 @@ Route::get('/survey/{survey_id}/slide_number_exists/{slide_number}', 'SurveyCont
 Route::get('/survey/{survey_id}/slide_number/{slide_number}', 'QuestionController@editQuestion')->name('question');
 
 
-Route::post('upload_image', function(){
-    request()->file('question-image')->store('question-images');
+Route::post('create_question', function(){
+    //request()->file('question-image')->store('question-images/users/');
+    $user = Auth::user();
+    $survey_id = request()->get('survey_id');
+    $slide_number = request()->get('slide_number');
 
-    return back();
+    $file = request()->file('question-image');
+    // if an image is uploaded
+    if ($file != null) {
+        $ext = $file->guessClientExtension();
+        $path = 'question-images/users/' . $user['id'] . "_" . $user['email'] . '/' . 'survey_' . $survey_id;
+        $file->storeAs($path, '/slide_number_' . $slide_number . $ext);
+    }
+
+    $question = Input::get('question');
+    $correct_answer =  Input::get('correct-answer');
 });

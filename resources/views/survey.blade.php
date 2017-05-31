@@ -51,7 +51,7 @@
     @if (Auth::guest())
         @yield('content')
     @else
-        <div id="topic">Welcome to your survey page!!</div>
+        <div id="topic">{{$survey_name['name']}}</div>
     @endif
 
     <table class="questions_table">
@@ -91,7 +91,7 @@
                 var new_slide_number = document.getElementsByName("new_slide_number")[0].value;
                 $.getJSON( "{{Request::url()}}" + "/slide_number_exists/" + new_slide_number, function( data ) {
                     if (!Number.isInteger(parseInt(new_slide_number))) {
-                    document.getElementById("error-message").innerHTML = "'" + new_slide_number + "' is not a numbver.";
+                    document.getElementById("error-message").innerHTML = "'" + new_slide_number + "' is not a number.";
                     document.getElementById("error-message").display = display;
                     }
                     else if (data['slideNumberExists']) {

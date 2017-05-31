@@ -19,9 +19,6 @@ tr th{
     padding: 10px 10px 10px 10px;
 }
 
-#questoin_column{
-}
-
 .questions_table{
     border-collapse: collapse;
     text-align: left;
@@ -42,18 +39,13 @@ tr th{
     text-align: center;
 }
 
-#question-form{
+.question-form{
     width: 50%;
     float: left;
-    margin-top:3%;
 }
 
-#upload-image-row{
+#text-response-form{
     margin-top: 5%;
-}
-
-#correct-answer{
-    margin-top: 10%;
 }
 
 #image-upload{
@@ -140,7 +132,7 @@ main {
     padding-right: 2%;
     margin-left: 20%;
     margin-right: 20%;
-    Height: 100vh
+    Height: 150vh
 }
 
 .css-treeview ul li label {
