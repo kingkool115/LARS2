@@ -65,7 +65,7 @@
     <br>
 
     <!-- Form to create a text response question -->
-    <form id="text-response-form" action="/create_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}" method="post" enctype="multipart/form-data">
+    <form id="text-response-form" action="/create_text_response_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}" method="post" enctype="multipart/form-data">
         <div class="form-group question-form">
             <!-- Question -->
             <label for="question">Question</label>
@@ -91,7 +91,7 @@
     </form>
 
     <!-- Form to create a multiple choice question -->
-    <form id="multiple-choice-form" style="display: none" action="/create_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}" method="post" enctype="multipart/form-data">
+    <form id="multiple-choice-form" style="display: none" action="/create_multiple_choice_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}" method="post" enctype="multipart/form-data">
         <div class="form-group question-form">
             <!-- Question -->
             <label for="question">Question</label>
@@ -107,9 +107,9 @@
             @for ($x = 1; $x < 8; $x++)
                 <label id="correct_answer_{{$x}}" for="correct_answer">Answer {{$x}}</label>
                 <div style="float: right">
-                    <input type="checkbox" name="correct-answers" id="correct_answer_checkbox_{{$x}}"> correct
+                    <input type="checkbox" name="is_answer_correct_{{$x}}" id="correct_answer_checkbox_{{$x}}"> correct
                 </div>
-                <textarea rows="1" cols="50" class="form-control" name="possible_answer" id="possible_answer_{{$x}}"></textarea>
+                <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x}}" id="possible_answer_{{$x}}"></textarea>
                 <br>
             @endfor
             <br>
@@ -135,7 +135,7 @@
         function validateQuestions() {
             var correct_answers = 0;
             var checked_empty_answer_as_correct = false;
-            for (var x = 1; x < document.getElementsByName('correct-answers').length; x++) {
+            for (var x = 1; x < 8; x++) {
                 var possible_answer = document.getElementById('possible_answer_' + x).value;
                 var is_checkbox_checked = document.getElementById('correct_answer_checkbox_' + x).checked;
                 if (possible_answer.trim().length == 0 && is_checkbox_checked) {

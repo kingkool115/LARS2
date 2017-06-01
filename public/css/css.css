@@ -132,7 +132,7 @@ main {
     padding-right: 2%;
     margin-left: 20%;
     margin-right: 20%;
-    Height: 150vh
+    overflow:auto;
 }
 
 .css-treeview ul li label {
