@@ -10,6 +10,8 @@ namespace App\Http\Controllers;
 
 use Barryvdh\Debugbar\Facade as Debugbar;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
+use \Illuminate\Support\Facades\Auth;
 
 class SurveyController extends Controller
 {
@@ -20,7 +22,11 @@ class SurveyController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('web');
+        $this->middleware('auth');
+    }
+
+    public function hasPermission($user_id, $survey_id) {
+        return sizeof(DB::table('survey')->where(['user_id' => $user_id, 'id' => $survey_id])->get()) > 0;
     }
 
     /**
@@ -32,17 +38,48 @@ class SurveyController extends Controller
      */
     public function showQuestions($survey_id)
     {
-        // TODO: check if survey belongs to correct professor.
-        $all_questions = DB::table('questions')->select('id', 'survey_id', 'question', 'slide_number')->where('survey_id', $survey_id)->orderBy('slide_number')->get();
-        $survey_name = (array) DB::table('survey')->select('name')->where('id', $survey_id)->get()[0];
+        $user = Auth::user();
 
-        $result = [];
-        foreach ($all_questions as $question) {
-            $result[] = (array) $question;
+        // TODO: check if survey belongs to correct professor.
+        if ($this->hasPermission($user['id'], $survey_id)) {
+            $all_questions = DB::table('questions')->select('id', 'survey_id', 'question', 'slide_number')->where(['survey_id' => $survey_id])->orderBy('slide_number')->get();
+            $survey = (array)DB::table('survey')->select('id', 'name')->where('id', $survey_id)->get()[0];
+
+            $chapter_id = (array)DB::table('survey')->select('chapter_id')->where('id', $survey_id)->get()[0];
+            $chapter_name = (array)DB::table('chapter')->select('name')->where('id', $chapter_id)->get()[0];
+
+            $result = [];
+            foreach ($all_questions as $question) {
+                $result[] = (array)$question;
+            }
+
+            Debugbar::warning($result);
+            return view('survey', compact('result', 'survey', 'chapter_id', 'chapter_name'));
+        } else {
+            // TODO: permission denied page.
+            print "Permission denied";
+        }
+    }
+
+    public function removeQuestions($survey_id) {
+        $user = Auth::user();
+        $request_parameter = (array) Request::all();
+        $slide_to_remove_array = explode("_", $request_parameter['slides_to_remove']);
+
+        //print_r($slide_to_remove_array);
+
+        if ($this->hasPermission($user['id'], $survey_id)) {
+            DB::transaction(function() use ($slide_to_remove_array, $survey_id) {
+                for ($x = 0; $x < sizeof($slide_to_remove_array); $x++) {
+                    DB::table('questions')->where(['survey_id' => $survey_id, 'slide_number' => $slide_to_remove_array[$x]])->delete();
+                }
+            });
+        } else {
+            // TODO: Permission denied page
+            print "Permission denied";
         }
 
-        Debugbar::warning($survey_name['name']);
-        return view('survey', compact('result', 'survey_name'));
+        return redirect()->route('survey', ['survey_id' => $survey_id]);
     }
 
     /**

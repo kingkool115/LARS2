@@ -51,7 +51,7 @@
     @yield('content')
     @else
 
-    <div id="topic">Top Navigation Example</div>
+    <div id="topic">My Lectures</div>
 
     <div class="css-treeview">
         <ul>
