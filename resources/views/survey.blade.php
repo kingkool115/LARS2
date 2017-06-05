@@ -52,7 +52,7 @@
         @yield('content')
     @else
         <div id="topic">
-            <a href="{{route('chapter', ['chapter_id' => $chapter_id['chapter_id']])}}">Chapter {{$chapter_name['name']}}</a><br>
+            <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id])}}">Chapter {{$chapter_name['name']}}</a><br>
             {{$survey['name']}}
         </div>
 
@@ -61,7 +61,7 @@
                 <th id="question_column">Question</th>
                 <th>Slide Number</th>
                 <th>
-                    <span id="remove-label">Remove</span>
+                    <div id="remove-label">Remove</div>
                     <button id="remove-button" type="submit" class="btn btn-primary" style="background-color: #a94442; display: none;" onclick="removeQuestions();"> Remove </button>
                 </th>
             </tr>
@@ -75,7 +75,7 @@
         @foreach($result as $question)
             <tr class="survey_table_content">
                 <th>
-                    <a href="{{route('question', ['survey_id' => $question['survey_id'], 'slide_number' => $question['slide_number']])}}">
+                    <a href="{{route('question', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $question['survey_id'], 'slide_number' => $question['slide_number']])}}">
                         {{ $question['question']}}
                     </a>
                 </th>
@@ -89,9 +89,9 @@
 
             <table id="textfield-new-slide">
                 <tr>
-                    <th><input type="text" name="new_slide_number"></th>
+                    <th><input type="text" name="new_slide_number" placeholder="slide number"></th>
                     <th>
-                        <button type="submit" class="btn btn-primary" onclick="createNewSlide()">Create</button>
+                        <button type="submit" class="btn btn-primary" onclick="createNewSlide()">Create question</button>
                     </th>
                 </tr>
             </table>
@@ -105,7 +105,9 @@
                  */
                 function createNewSlide() {
                     var new_slide_number = document.getElementsByName("new_slide_number")[0].value;
-                    $.getJSON( "{{Request::url()}}" + "/slide_number_exists/" + new_slide_number, function( data ) {
+                    var url_check_if_slide_number_exists = "{{route('slide_number_exists', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => 'new_slide_number'])}}";
+                    url_check_if_slide_number_exists = url_check_if_slide_number_exists.replace('new_slide_number', new_slide_number);
+                    $.getJSON( url_check_if_slide_number_exists, function( data ) {
                         if (!Number.isInteger(parseInt(new_slide_number))) {
                             document.getElementById("error-message").innerHTML = "'" + new_slide_number + "' is not a number.";
                             document.getElementById("error-message").display = display;
@@ -116,7 +118,9 @@
                             //window.alert("slide number " + new_slide_number + " already exists for this survey.");
                         } else {
                             document.getElementById("error-message").innerHTML = "";
-                            window.location.href = "/survey/{{$survey['id']}}/slide_number/" + new_slide_number;
+                            var url = "{{route('question', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => 'new_slide_number'])}}";
+                            url = url.replace('new_slide_number', new_slide_number);
+                            window.location.href = url;
                         }
                     });
                 }
@@ -130,11 +134,12 @@
                     for (x = 0; x < all_checkboxes.length; x++) {
                         if (all_checkboxes[x].checked) {
                             document.getElementById('remove-label').style.display = 'none';
-                            document.getElementById('remove-button').style.display = 'inline';
+                            document.getElementById('remove-button').style.display = 'block';
+                            document.getElementById('remove-button').style.margin = '0 auto';
                             return;
                         }
                     }
-                    document.getElementById('remove-label').style.display = 'inline';
+                    document.getElementById('remove-label').style.display = 'block';
                     document.getElementById('remove-button').style.display = 'none';
                 }
 
@@ -155,7 +160,7 @@
                     }
                     // remove last underline character
                     slides_to_remove = slides_to_remove.slice(0, -1);
-                    var url = '{{route('remove_questions', ['survey_id' => $survey['id']])}}';
+                    var url = '{{route('remove_questions', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id])}}';
                     // put slides_to_remove as parameter into the url
                     window.location.href = url + "?slides_to_remove=" + slides_to_remove;
                 }

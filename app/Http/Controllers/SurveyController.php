@@ -15,6 +15,10 @@ use \Illuminate\Support\Facades\Auth;
 
 class SurveyController extends Controller
 {
+
+    private $lecture_id;
+    private $chapter_id;
+
     /**
      * Create a new controller instance.
      *
@@ -25,50 +29,84 @@ class SurveyController extends Controller
         $this->middleware('auth');
     }
 
-    public function hasPermission($user_id, $survey_id) {
-        return sizeof(DB::table('survey')->where(['user_id' => $user_id, 'id' => $survey_id])->get()) > 0;
+    /**
+     * This function checks if a user is permitted to use any functions of this class.
+     *
+     * @param $lecture_id does the user have the rights for this lecture_id?
+     * @return bool true if user has permissions, false if not.
+     */
+    private function hasPermission($lecture_id) {
+        $user = Auth::user();
+        return sizeof(DB::table('lecture')->where(['user_id' => $user['id'], 'id' => $lecture_id])->get()) > 0;
     }
 
     /**
-     * This function is called for GET: /survey/{survey_id}/
+     * This function checks if a survey with given survey id exists in DB.
+     *
+     * @param $survey_id id of the survey to check.
+     * @return bool true, if survey exists in DB. Else false.
+     */
+    private function surveyExists($survey_id){
+        return sizeof(DB::table('survey')->select('id', 'name')->where('id', $survey_id)->get()) > 0;
+    }
+
+    /**
+     * This function is called for GET: lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/
      * It show's all the questions of a certain survey.
      *
+     * @param $lecture_id id of the lecture this survey belongs to.
+     * @param $chapter_id id of the chapter this survey belongs to.
      * @param $survey_id id of survey that the view shows us.
      * @return a overview of all questions belonging to this survey.
      */
-    public function showQuestions($survey_id)
+    public function showQuestions($lecture_id, $chapter_id, $survey_id)
     {
-        $user = Auth::user();
+        $this->lecture_id = $lecture_id;
+        $this->chapter_id = $chapter_id;
 
+        Debugbar::warning("fubaaa" . $chapter_id);
         // TODO: check if survey belongs to correct professor.
-        if ($this->hasPermission($user['id'], $survey_id)) {
-            $all_questions = DB::table('questions')->select('id', 'survey_id', 'question', 'slide_number')->where(['survey_id' => $survey_id])->orderBy('slide_number')->get();
-            $survey = (array)DB::table('survey')->select('id', 'name')->where('id', $survey_id)->get()[0];
+        if ($this->hasPermission($lecture_id)) {
+            if ($this->surveyExists($survey_id)) {
+                $all_questions = DB::table('questions')->select('id', 'survey_id', 'question', 'slide_number')->where(['survey_id' => $survey_id])->orderBy('slide_number')->get();
+                $survey = (array)DB::table('survey')->select('id', 'name')->where('id', $survey_id)->get()[0];
 
-            $chapter_id = (array)DB::table('survey')->select('chapter_id')->where('id', $survey_id)->get()[0];
-            $chapter_name = (array)DB::table('chapter')->select('name')->where('id', $chapter_id)->get()[0];
+                // TODO: kann man bestimmt schöner machen
+                $chapter_name = (array)DB::table('chapter')->select('name')->where('id', $chapter_id)->get()[0];
 
-            $result = [];
-            foreach ($all_questions as $question) {
-                $result[] = (array)$question;
+                $result = [];
+                foreach ($all_questions as $question) {
+                    $result[] = (array)$question;
+                }
+
+                //Debugbar::warning($result);
+                return view('survey', compact('result', 'survey', 'chapter_id', 'chapter_name', 'lecture_id', 'survey_id'));
+            } else {
+                // TODO: survey does not exist page.
+                print "Sorry, but your requested survey does not exist.";
             }
-
-            Debugbar::warning($result);
-            return view('survey', compact('result', 'survey', 'chapter_id', 'chapter_name'));
         } else {
             // TODO: permission denied page.
             print "Permission denied";
         }
     }
 
-    public function removeQuestions($survey_id) {
-        $user = Auth::user();
+    /**
+     * This function is called when user clicks Remove-Button in survey-view in order to remove questions.
+     * Questions will be removed from DB and will be redirect to same page (survey-view).
+     *
+     * @param $lecture_id id of the lecture this survey belongs to.
+     * @param $chapter_id id of the chapter this survey belongs to.
+     * @param $survey_id id of survey that the view shows us.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function removeQuestions($lecture_id, $chapter_id, $survey_id) {
         $request_parameter = (array) Request::all();
         $slide_to_remove_array = explode("_", $request_parameter['slides_to_remove']);
 
         //print_r($slide_to_remove_array);
 
-        if ($this->hasPermission($user['id'], $survey_id)) {
+        if ($this->hasPermission($lecture_id)) {
             DB::transaction(function() use ($slide_to_remove_array, $survey_id) {
                 for ($x = 0; $x < sizeof($slide_to_remove_array); $x++) {
                     DB::table('questions')->where(['survey_id' => $survey_id, 'slide_number' => $slide_to_remove_array[$x]])->delete();
@@ -79,17 +117,18 @@ class SurveyController extends Controller
             print "Permission denied";
         }
 
-        return redirect()->route('survey', ['survey_id' => $survey_id]);
+        return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
     }
 
     /**
      * Check if a survey already has a question for a certain slide number.
      *
-     * @param $survey_id    id of survey we are checking the above condition.
+     * @param $lecture_id id of the lecture this survey belongs to. Unused but needed for url resolving.
+     * @param $chapter_id id of the chapter this survey belongs to. Unused but needed for url resolving.
      * @param $slide_number check if this slide number has already a question.
      * @return true if survey has for the given slide number a question, else false.
      **/
-    public function slideNumberExists($survey_id, $slide_number) {
+    public function slideNumberExists($lecture_id, $chapter_id, $survey_id, $slide_number) {
         $slide_number_exists =  DB::table('questions')->where('survey_id', $survey_id)->where('slide_number', $slide_number)->get()->count() > 0;
         Debugbar::info($slide_number_exists );
         return response()->json([

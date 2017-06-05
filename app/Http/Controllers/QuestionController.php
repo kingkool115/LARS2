@@ -26,39 +26,47 @@ class QuestionController extends Controller
     }
 
 
-    public function hasPermission($user_id, $survey_id) {
-        return sizeof(DB::table('survey')->where(['user_id' => $user_id, 'id' => $survey_id])->get()) > 0;
+    /**
+     * This function checks if a user is permitted to use any functions of this class.
+     *
+     * @param $lecture_id does the user have the rights for this lecture_id?
+     * @return bool true if user has permissions, false if not.
+     */
+    public function hasPermission($lecture_id) {
+        $user = Auth::user();
+        return sizeof(DB::table('lecture')->where(['user_id' => $user['id'], 'id' => $lecture_id])->get()) > 0;
     }
 
     /** 
      * This function routes to /survey/{survey_id}/slide_number/{slide_number}
      * TODO: Wenn der Link direkt eingegeben wird, dann muss überprüft werden, ob es für dieses survey_id nicht schon dieselbe slide_number gibt.
      *
+     * @param $lecture_id the id of the lecture this question belongs to.
+     * @param $chapter_id the id of the chapter this question belongs to.
      * @param $survey_id this question belongs to.
      * @param $slide_number of powerpoint presentation this question belongs to.
      * @return view question.blade.php
      */
-    public function editQuestion($survey_id, $slide_number)
+    public function editQuestion($lecture_id, $chapter_id, $survey_id, $slide_number)
     {
-        $user = Auth::user();
         $survey_name = (array)DB::table('survey')->select('name')->where('id', $survey_id)->get()[0];
         $survey_name = $survey_name['name'];
 
         // TODO: check if we create a new question with empty fields or just edit an already existing question.
-        if ($this->hasPermission($user['id'], $survey_id)) {
+        if ($this->hasPermission($lecture_id)) {
             $question = DB::table('questions')->where(['survey_id' => $survey_id, "slide_number" => $slide_number])->get();
             //print_r(explode('-', $question['correct_answers']));
             // if we want to just edit an existing question
             if (sizeof($question) > 0) {
                 $question = (array)$question[0];
-                print_r(explode('-', $question['correct_answers']));
-                // print_r($question);
+                // print_r(explode('-', $question['correct_answers']));
+                 print_r($slide_number);
                 $edit_form = 1;
-                return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'survey_id'));
+                return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
             // if we want to create a completely new question
             } else {
                 $edit_form = 0;
-                return view('question', compact('edit_form','question', 'survey_name', 'slide_number', 'survey_id'));
+                return view('question', compact('edit_form','question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
             }
         }else {
             // TODO: redirect to permission denied page
@@ -66,13 +74,21 @@ class QuestionController extends Controller
         }
     }
 
-    public function postTextResponseQuestion() {
-        $user = Auth::user();
+    /**
+     * This function will create a new text response question and saves it into DB.
+     * If question has an image, than store it in /storage/app/public/question-images/users/{user_id}/{survey_id}/{slide_number}.{extension}
+     * After successful creation of the question, the user will be redirected to survey-view of the new created question.
+     *
+     * @param $lecture_id the id of the lecture this question belongs to.
+     * @param $chapter_id the id of the chapter this question belongs to.
+     * @param $survey_id this question belongs to.
+     * @param $slide_number of powerpoint presentation this question belongs to.
+     * @return redirect to survey-view.
+     * */
+    public function postTextResponseQuestion($lecture_id, $chapter_id, $survey_id, $slide_number) {
         $post_request = Request::all();
-        $survey_id = $post_request['survey_id'];
-
-        if ($this->hasPermission($user['id'], $survey_id)) {
-            $slide_number = $post_request['slide_number'];
+        print_r($post_request);
+        if ($this->hasPermission($lecture_id)) {
 
             // if an image is uploaded
             $file = request()->file('question-image-text-response');
@@ -81,6 +97,7 @@ class QuestionController extends Controller
                 // users/{user_id}/{survey_id}/{slide_number}/
                 // TODO: store them somewhere else
                 // this file path will be saved into DB
+                $user = Auth::user();
                 $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
                 // actually the file is stored in public/question-images ...
                 $file->storeAs('public/' . $path,  $slide_number . "." . $ext);
@@ -106,22 +123,29 @@ class QuestionController extends Controller
             DB::table('questions')->insert($question_db_entry);
 
             // return to survey overview
-            return redirect()->route('survey', ['survey_id' => $survey_id]);
+            return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
         } else {
             // TODO: redirect to permission denied page
             print "Permission denied";
         }
     }
 
-    public function postMultipleChoiceQuestion() {
+    /**
+     * This function will create a new Multiple Choice question and saves it into DB.
+     * If question has an image, than store it in /storage/app/public/question-images/users/{user_id}/{survey_id}/{slide_number}.{extension}
+     * After successful creation of the question, the user will be redirected to survey-view of the new created question.
+     *
+     * @param $lecture_id the id of the lecture this question belongs to.
+     * @param $chapter_id the id of the chapter this question belongs to.
+     * @param $survey_id this question belongs to.
+     * @param $slide_number of powerpoint presentation this question belongs to.
+     * @return redirect to survey-view.
+     * */
+    public function postMultipleChoiceQuestion($lecture_id, $chapter_id, $survey_id, $slide_number) {
         //request()->file('question_for_slide_number-image')->store('question_for_slide_number-images/users/');
-        $user = Auth::user();
         $post_request = Request::all();
-        $survey_id = $post_request['survey_id'];
 
-        if ($this->hasPermission($user['id'], $survey_id)) {
-            $slide_number = $post_request['slide_number'];
-
+        if ($this->hasPermission($lecture_id)) {
             // if an image is uploaded
             $file = request()->file('question-image-multiple-choice');
             if ($file != null) {
@@ -129,6 +153,7 @@ class QuestionController extends Controller
                 // users/{user_id}/{survey_id}/{slide_number}/
                 // TODO: store them somewhere else
                 // this file path will be saved into DB
+                $user = Auth::user();
                 $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
                 // actually the file is stored in public/question-images ...
                 $file->storeAs('public/' . $path,  $slide_number . "." . $ext);
@@ -192,7 +217,7 @@ class QuestionController extends Controller
 
             // print_r($question_db_entry);
             // return to survey overview
-            return redirect()->route('survey', ['survey_id' => $survey_id]);
+            return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
         } else {
             // TODO: redirect to permission denied page
             print "Permission denied";

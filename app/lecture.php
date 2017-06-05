@@ -5,7 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use App\Chapter;
 
-class Lecture
+class lecture
 {
     private $id;
     private $name;
@@ -13,7 +13,7 @@ class Lecture
 
 
     /**
-     * Lecture constructor.
+     * lecture constructor.
      * @param $id
      */
     public function __construct($id, $name, Chapter $chapter)

@@ -113,14 +113,15 @@ tr th{
     padding: 10px 10px 10px 10px;
 }
 
-.questions_table{
+.questions_table, .surveys_table, .chapters_table, .lectures_table{
     border-collapse: collapse;
     text-align: left;
+    min-width: 40%;
     margin-left:auto;
     margin-right:auto;
 }
 
-#textfield-new-slide{
+#textfield-new-slide, #textfield-new-survey, #textfield-new-chapter, #textfield-new-lecture{
     margin-left:auto;
     margin-right:auto;
 }
@@ -151,11 +152,11 @@ tr th{
     float: right;
 }
 
-.survey_table_content{
+.survey_table_content, .lecture_table_content{
  background-color: #f5f8fa;
 }
 
-.slide_numbers, .remove-checkboxes{
+.slide_numbers, .remove-checkboxes, #remove-button, #remove-label{
     text-align: center;
 }
 

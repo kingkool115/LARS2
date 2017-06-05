@@ -51,17 +51,14 @@
     @if (Auth::guest())
         @yield('content')
     @else
-        <div id="topic">
-            <a href="{{route('lecture', ['lecture_id' => $lecture_id])}}">Lecture {{$lecture_name['name']}}</a><br>
-            {{$chapter['name']}}
-        </div>
+        <div id="topic">{{$lecture['name']}}</div>
 
-        <table class="surveys_table">
+        <table class="chapters_table">
             <tr id="very_first_table_row">
-                <th>Survey Name</th>
+                <th>Chapter Name</th>
                 <th>
                     <div id="remove-label">Remove</div>
-                    <button id="remove-button" type="submit" class="btn btn-primary" style="background-color: #a94442; display: none;" onclick="removeSurveys();"> Remove </button>
+                    <button id="remove-button" type="submit" class="btn btn-primary" style="background-color: #a94442; display: none;" onclick="removeChapters();"> Remove </button>
                 </th>
             </tr>
             @for ($x = 0; $x < 1; $x++)
@@ -70,40 +67,41 @@
                     <th></th>
                 </tr>
             @endfor
-            @foreach($result as $survey)
+            @foreach($result as $chapter)
                 <tr class="survey_table_content">
                     <th>
-                        <a href="{{route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey['id']])}}">
-                            {{ $survey['name']}}
+                        <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter['id']])}}">
+                            {{ $chapter['name']}}
                         </a>
                     </th>
                     <th class="remove-checkboxes">
-                        <input id="survey_to_remove_{{$survey['id']}}" autocomplete="off" type="checkbox" name="survey-to-remove" onchange="displayHideRemoveButton();">
+                        <input id="chapter_to_remove_{{$chapter['id']}}" autocomplete="off" type="checkbox" name="chapter-to-remove" onchange="displayHideRemoveButton();">
                     </th>
                 </tr>
             @endforeach
         </table>
 
-        <table id="textfield-new-survey">
+        <table id="textfield-new-chapter">
             <tr>
-                <th><input type="text" name="new_survey" placeholder="Enter survey name"></th>
+                <th><input type="text" name="new_chapter" placeholder="Enter chapter name"></th>
                 <th>
-                    <button type="submit" class="btn btn-primary" onclick="createNewSurvey()">Create survey</button>
+                    <button type="submit" class="btn btn-primary" onclick="createNewChapter()">Create chapter</button>
                 </th>
             </tr>
         </table>
         <div id="error-message"></div>
     @endif
 </main>
+
 <script>
 
     /**
-     * This function creates a new survey if Create-Button is clicked.
+     * This function creates a new chapter if Create-Button is clicked.
      */
-    function createNewSurvey() {
-        var survey_name = document.getElementsByName("new_survey")[0].value;
-        var url = "{{route('create_survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_name' => 'new_survey_name'])}}";
-        url = url.replace('new_survey_name', survey_name);
+    function createNewChapter() {
+        var chapter_name = document.getElementsByName("new_chapter")[0].value;
+        var url = "{{route('create_chapter', ['lecture_id' => $lecture_id, 'chapter_name' => 'new_chapter_name'])}}";
+        url = url.replace('new_chapter_name', chapter_name);
         window.location.href = url;
     }
 
@@ -112,7 +110,7 @@
      * Otherwise there is just a label visible.
      */
     function displayHideRemoveButton() {
-        var all_checkboxes = document.getElementsByName('survey-to-remove');
+        var all_checkboxes = document.getElementsByName('chapter-to-remove');
         for (x = 0; x < all_checkboxes.length; x++) {
             if (all_checkboxes[x].checked) {
                 document.getElementById('remove-label').style.display = 'none';
@@ -127,24 +125,24 @@
 
     /**
      * Is called, when remove button is clicked.
-     * It detects which surveys are marked to be removed and concat them to a string.
-     * This string of concatenated survey ids will be passed as parameter to the URL which handles the deletion.
+     * It detects which chapters are marked to be removed and concat them to a string.
+     * This string of concatenated chapter ids will be passed as parameter to the URL which handles the deletion.
      */
-    function removeSurveys() {
-        var all_checkboxes = document.getElementsByName('survey-to-remove');
-        var slides_to_remove = "";
+    function removeChapters() {
+        var all_checkboxes = document.getElementsByName('chapter-to-remove');
+        var chapters_to_remove = "";
         for (x = 0; x < all_checkboxes.length; x++) {
             if (all_checkboxes[x].checked) {
                 var checkbox_id = all_checkboxes[x].id;
-                var slide_number = checkbox_id.split("survey_to_remove_")[1];
-                slides_to_remove += slide_number + '_';
+                var chapter_id = checkbox_id.split("chapter_to_remove_")[1];
+                chapters_to_remove += chapter_id + '_';
             }
         }
         // remove last underline character
-        slides_to_remove = slides_to_remove.slice(0, -1);
-        var url = '{{route('remove_surveys', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id])}}';
+        chapters_to_remove = chapters_to_remove.slice(0, -1);
+        var url = '{{route('remove_chapters', ['lecture_id' => $lecture_id])}}';
         // put slides_to_remove as parameter into the url
-        window.location.href = url + "?surveys_to_remove=" + slides_to_remove;
+        window.location.href = url + "?chapters_to_remove=" + chapters_to_remove;
     }
 </script>
 </body>

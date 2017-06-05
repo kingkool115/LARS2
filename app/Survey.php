@@ -14,18 +14,21 @@ class Survey
     private $id;
     private $name;
     private $questions;
+    private $chapter_id;
 
     /**
      * Survey constructor.
      * @param $id
      * @param $name
+     * @param $chapter_id
      * @param $questions
      */
-    public function __construct($id, $name, $questions)
+    public function __construct($id, $name, $chapter_id, $questions)
     {
         $this->id = $id;
         $this->name = $name;
         $this->questions = $questions;
+        $this->chapter_id = $chapter_id;
     }
 
     /**
@@ -75,5 +78,22 @@ class Survey
     {
         $this->questions = $questions;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getChapterId()
+    {
+        return $this->chapter_id;
+    }
+
+    /**
+     * @param mixed $chapter_id
+     */
+    public function setChapterId($chapter_id)
+    {
+        $this->chapter_id = $chapter_id;
+    }
+
 
 }

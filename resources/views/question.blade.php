@@ -51,7 +51,7 @@
         @yield('content')
     @else
         <div id="topic">
-            <a href="{{route('survey', ['survey_id' => $survey_id])}}"> Survey '{{$survey_name}}' </a><br/>
+            <a href="{{route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id] )}}"> Survey '{{$survey_name}}' </a><br/>
             @if ($edit_form)
                 Edit
             @else
@@ -65,7 +65,7 @@
                @if($edit_form && !$question['is_text_response']) checked @endif required>
                             Multiple choice question<br>
         <input type="radio" id="text-response-radio" name="question-type" value="text-response"
-               @if($edit_form && $question['is_text_response']) checked @endif required>
+               @if(($edit_form && $question['is_text_response']) || !$edit_form) checked @endif required>
                                 Text respone question
     </form>
     <br>
@@ -74,7 +74,7 @@
     <br>
 
     <!-- Form to create a text response question -->
-    <form id="text-response-form" action="/create_text_response_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}"
+    <form id="text-response-form" action="{{route('postTextResponseQuestion', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => $slide_number])}}"
           method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
         <div class="form-group question-form">
             <!-- Question -->
@@ -129,7 +129,7 @@
     </form>
 
     <!-- Form to create a multiple choice question -->
-    <form id="multiple-choice-form" style="display: none" action="/create_multiple_choice_question?survey_id={{$survey_id}}&slide_number={{$slide_number}}"
+    <form id="multiple-choice-form" style="display: none" action="{{route('postMultipleChoiceQuestion', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => $slide_number])}}"
           method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
         <div class="form-group question-form">
             <!-- Question -->
