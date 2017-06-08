@@ -91,3 +91,7 @@ Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_
 // post a multiple choice question
 Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}/create_multiple_choice_question', 'QuestionController@postMultipleChoiceQuestion')
     ->name('postMultipleChoiceQuestion');
+
+// show create survey form
+Route::get('create_new_survey', 'CreateNewSurveyController@showCreateSurveyForm')
+    ->name('show_create_survey_form');

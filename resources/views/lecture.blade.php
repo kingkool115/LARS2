@@ -34,7 +34,7 @@
     <div class="topnav">
         @if (!Auth::guest())
             <a class="left-header-buttons" href="{{ route('lectures') }}">My Lectures</a>
-            <a href="#news">Create new survey</a>
+            <a href="{{route('show_create_survey_form')}}">Create new survey</a>
             <!-- Handle Logout Button -->
             <a id="logout_button" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                 Logout

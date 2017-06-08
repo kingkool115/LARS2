@@ -33,7 +33,7 @@
     <div class="topnav">
         @if (!Auth::guest())
             <a class="left-header-buttons" href="{{ route('lectures') }}">My Lectures</a>
-            <a href="#news">Create new survey</a>
+            <a href="{{route('show_create_survey_form')}}">Create new survey</a>
             <!-- Handle Logout Button -->
             <a id="logout_button" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                 Logout
@@ -59,7 +59,7 @@
             @endif question for slide number {{$slide_number}}
         </div>
 
-    <!-- Radion Buttons to select type of question -->
+    <!-- Radio Buttons to select type of question -->
     <form onclick="displayCorrectForm()">
         <input type="radio" id="multiple-choice-radio" name="question-type" value="multiple-choice"
                @if($edit_form && !$question['is_text_response']) checked @endif required>
@@ -275,7 +275,6 @@
                 multiple_choice_form.style.display = "none";
                 text_response_form.style.display = "initial";
             }
-            document.getElementById('multiple-choice-radio')
         };
         displayCorrectForm();
 
