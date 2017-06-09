@@ -64,8 +64,9 @@
         <br>
 
         <!-- Form to create a new lecture -->
-        <form id="create-new-lecture-form" action=""
+        <form id="create-new-lecture-form" action="{{route('post_new_survey_for_new_lecture')}}"
               method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
+            {{ csrf_field() }}
             <div class="form-group question-form">
                 <!-- Lecture Name -->
                 <label for="lecture-new-lecture">Lecture</label>
@@ -89,6 +90,7 @@
         <!-- Form to create a new chapter -->
         <form id="create-new-chapter-to-existing-lecture-form" action=""
               method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
+            {{ csrf_field() }}
             <div class="form-group question-form">
                 <!-- Lecture Dropdown -->
                 <label for="lecture-dropdown-new-chapter">Lecture</label><br>
@@ -104,7 +106,7 @@
                 <input type="text" class="form-control" name="survey-new-chapter" required><br>
 
                 <!-- Submit Button -->
-                <button id="submit-new-chapter-button"class="btn btn-primary" type="submit">
+                <button id="submit-new-chapter-button"class="btn btn-primary" onclick="postNewChapter()" type="submit">
                     Create new Survey
                 </button>
             </div>
@@ -113,13 +115,11 @@
         <!-- Form to create a new survey -->
         <form id="create-new-survey-to-existing-chapter-form" action=""
               method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
+            {{ csrf_field() }}
             <div class="form-group question-form">
                 <!-- Lecture Dropdown -->
                 <label for="lecture-dropdown-new-survey">Lecture</label><br>
-                <select name="lecture-dropdown-new-survey">
-                    @for ($x = 0; $x < count($lectures); $x++)
-                        <option value="{{$lectures[$x]->getId()}}">{{$lectures[$x]->getName()}}</option>
-                    @endfor
+                <select name="lecture-dropdown-new-survey" onchange="updateChaptersDropDownList();">
                 </select><br><br>
 
                 <!-- Chapter Dropdown -->
@@ -132,7 +132,7 @@
                 <input type="text" class="form-control" name="survey-new-survey" required><br>
 
                 <!-- Submit Button -->
-                <button id="submit-new-survey-button"class="btn btn-primary" type="submit">
+                <button id="submit-new-survey-button" class="btn btn-primary"  onclick="postExistingChapter()" type="submit">
                     Create new Survey
                 </button>
             </div>
@@ -179,17 +179,89 @@
     };
     displayCorrectForm();
 
-    function fillDropDownList() {
-        var select = document.getElementsByName("lecture-dropdown-new-chapter")[0];
-
+    /**
+     * This method is called to display all lectures in dropdown list in create-new-chapter-view.
+     */
+    function fillLecturesDropDownList() {
+        // fill dropdown list in create new chapter view
+        var selectLecturesNewChapter = document.getElementsByName("lecture-dropdown-new-chapter")[0];
         @for ($x = 0; $x < count($lectures); $x++)
-            var el = document.createElement("option");
-            el.textContent = "{{$lectures[$x]->getName()}}";
-            el.valueOf = "{{$lectures[$x]->getId()}}";
-            select.appendChild(el);
+            var option = document.createElement("option");
+            option.innerHTML = "{{$lectures[$x]->getName()}}";
+            option.value = "{{$lectures[$x]->getId()}}";
+            selectLecturesNewChapter.appendChild(option);
+        @endfor
+
+        // fill dropdown list in create-new-survey-view
+        var selectLecturesNewSurvey = document.getElementsByName("lecture-dropdown-new-survey")[0];
+        @for ($x = 0; $x < count($lectures); $x++)
+            var option = document.createElement("option");
+            option.innerHTML = "{{$lectures[$x]->getName()}}";
+            option.value = "{{$lectures[$x]->getId()}}";
+            selectLecturesNewSurvey.appendChild(option);
         @endfor
     }
-    fillDropDownList();
+
+    /**
+     * Updates chapter dropdown list whenever user selects a new lecture from dropdown list in create-new-survey-view
+     */
+    function updateChaptersDropDownList() {
+        var selectLectures = document.getElementsByName("lecture-dropdown-new-survey")[0];
+        var selectChapters = document.getElementsByName("chapter-dropdown-new-survey")[0];
+        var selectedLectureId = selectLectures.options[selectLectures.selectedIndex].value;
+
+        // remove childs of select-chapters before adding new ones
+        while (selectChapters.firstChild) {
+            selectChapters.removeChild(selectChapters.firstChild);
+        }
+
+        // iterate through all of users lectures to get the one with same id like selected in dropdown list
+        @for ($x = 0; $x < count($lectures); $x++)
+            if ("{{$lectures[$x]->getId()}}" == "" + selectedLectureId) {
+                @foreach ($lectures[$x]->getChapters() as $chapter)
+                    var option = document.createElement("option");
+                    option.textContent = "{{$chapter->getName()}}";
+                    option.value = "{{$chapter->getId()}}";
+                    selectChapters.appendChild(option);
+                @endforeach
+            }
+        @endfor
+    }
+
+    /**
+     * This function is called when submit button of create-new-chapter-view is submitted.
+     */
+    function postNewChapter() {
+        var form = document.getElementById("create-new-chapter-to-existing-lecture-form");
+        var selectLectures = document.getElementsByName("lecture-dropdown-new-chapter")[0];
+        var selectedLectureId = selectLectures.options[selectLectures.selectedIndex].value;
+        var url = "{{route('post_new_survey_for_existing_lecture', ['lecture_id' => 'lec_id'])}}";
+        url = url.replace('lec_id', selectedLectureId);
+        form.action = url;
+    }
+
+    /**
+     * This function is called when submit button of create-new-survey-view is submitted.
+     */
+    function postExistingChapter() {
+        var form = document.getElementById("create-new-survey-to-existing-chapter-form");
+
+        // get selected lecture id
+        var selectLectures = document.getElementsByName("lecture-dropdown-new-chapter")[0];
+        var selectedLectureId = selectLectures.options[selectLectures.selectedIndex].value;
+
+        // get selected chapter id
+        var selectedChapters = document.getElementsByName("chapter-dropdown-new-survey")[0];
+        var selectedChapterId = selectedChapters.options[selectedChapters.selectedIndex].value;
+
+        var url = "{{route('post_new_survey_for_existing_chapter', ['lecture_id' => 'lec_id', 'chapter_id' => 'chap_id'])}}";
+        url = url.replace('lec_id', selectedLectureId);
+        url = url.replace('chap_id', selectedChapterId);
+        form.action = url;
+    }
+
+    fillLecturesDropDownList();
+    updateChaptersDropDownList();
 </script>
 
 </body>

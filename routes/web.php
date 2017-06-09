@@ -95,3 +95,15 @@ Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_
 // show create survey form
 Route::get('create_new_survey', 'CreateNewSurveyController@showCreateSurveyForm')
     ->name('show_create_survey_form');
+
+// post create new survey for new lecture form
+Route::post('create_new_survey/new_lecture', 'CreateNewSurveyController@postNewSurveyForNewLecture')
+    ->name('post_new_survey_for_new_lecture');
+
+// post create new survey for existing lecture form
+Route::post('create_new_survey/existing_lecture/{lecture_id}', 'CreateNewSurveyController@postNewSurveyForExistingLecture')
+    ->name('post_new_survey_for_existing_lecture');
+
+// post create new survey for existing chapter form
+Route::post('create_new_survey/existing_chapter/{lecture_id}/{chapter_id}', 'CreateNewSurveyController@postNewSurveyForExistingChapter')
+    ->name('post_new_survey_for_existing_chapter');
