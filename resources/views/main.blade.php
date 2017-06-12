@@ -123,6 +123,7 @@
      * This function creates a new lecture if Create-Button is clicked.
      */
     function createNewLecture() {
+        // TODO: check if lecture name not empty
         var lecture_name = document.getElementsByName("new_lecture")[0].value;
         var url = "{{route('create_lecture', ['lecture_name' => 'new_lecture_name'])}}";
         url = url.replace('new_lecture_name', lecture_name);

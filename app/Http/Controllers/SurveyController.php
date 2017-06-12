@@ -135,4 +135,6 @@ class SurveyController extends Controller
             'slideNumberExists' => $slide_number_exists,
         ]);
     }
+
+
 }

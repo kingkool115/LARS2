@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Request;
 
 class MainController extends Controller
 {
-    var $select_all_surveys_of_prof = 'SELECT survey.id AS survey_id, survey.name AS survey_name, chapter.id AS chapter_id, chapter.name AS chapter_name, lecture.id AS lecture_id, lecture.name AS lecture_name FROM survey INNER JOIN chapter INNER JOIN lecture ON survey.prof_id=1 AND survey.chapter_id=chapter.id AND chapter.lecture_id=lecture.id';
 
     /**
      * Create a new controller instance.
@@ -47,9 +46,9 @@ class MainController extends Controller
      */
     public function show_lectures()
     {
-        //$surveys = DB::select($this->select_all_surveys_of_prof);
-        //
-        $all_lectures = DB::table('lecture')->select('id', 'name')->get();
+        $user = Auth::user();
+
+        $all_lectures = DB::table('lecture')->select('id', 'name')->where(['user_id' => $user['id']])->get();
         $all_chapters = DB::table('chapter')->select('id', 'name', 'lecture_id')->get();
         $all_surveys = DB::table('survey')->select('id', 'name', 'chapter_id')->get();
 
