@@ -24,19 +24,8 @@ class QuestionController extends Controller
     }
 
 
-    /**
-     * This function checks if a user is permitted to use any functions of this class.
-     *
-     * @param $lecture_id does the user have the rights for this lecture_id?
-     * @return bool true if user has permissions, false if not.
-     */
-    public function hasPermission($lecture_id) {
-        $user = Auth::user();
-        return sizeof(DB::table('lecture')->where(['user_id' => $user['id'], 'id' => $lecture_id])->get()) > 0;
-    }
-
     /** 
-     * This function routes to /survey/{survey_id}/slide_number/{slide_number}
+     * This function routes to lecture/{lecture_id}/chapter/[chapter_id}/survey/{survey_id}/slide_number/{slide_number}
      * TODO: Wenn der Link direkt eingegeben wird, dann muss überprüft werden, ob es für dieses survey_id nicht schon dieselbe slide_number gibt.
      *
      * @param $lecture_id the id of the lecture this question belongs to.
@@ -50,26 +39,30 @@ class QuestionController extends Controller
         $survey_name = (array)DB::table('survey')->select('name')->where('id', $survey_id)->get()[0];
         $survey_name = $survey_name['name'];
 
-        // TODO: check if we create a new question with empty fields or just edit an already existing question.
+        // check if user has permission for this lecture
         if ($this->hasPermission($lecture_id)) {
-            $question = DB::table('questions')->where(['survey_id' => $survey_id, "slide_number" => $slide_number])->get();
-            //print_r(explode('-', $question['correct_answers']));
-            // if we want to just edit an existing question
-            if (sizeof($question) > 0) {
-                $question = (array)$question[0];
-                // print_r(explode('-', $question['correct_answers']));
-                 print_r($slide_number);
-                $edit_form = 1;
-                return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
-            // if we want to create a completely new question
+
+            // check if lecture, chapter, survey, slide_number belong to each other.
+            if ($this->checkUrlConstellation($lecture_id, $chapter_id, $survey_id)) {
+
+                $question = DB::table('questions')->where(['survey_id' => $survey_id, "slide_number" => $slide_number])->get();
+
+                // if we want to just edit an existing question
+                if (sizeof($question) > 0) {
+                    $question = (array)$question[0];
+                    $edit_form = 1;
+                    return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
+                // if we want to create a completely new question
+                } else {
+                    $edit_form = 0;
+                    return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
+                }
             } else {
-                $edit_form = 0;
-                return view('question', compact('edit_form','question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
+                return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
             }
-        }else {
-            // TODO: redirect to permission denied page
-            return "Permission denied";
         }
+        // TODO: redirect to permission denied page
+        return "Permission denied";
     }
 
     /**
@@ -122,10 +115,9 @@ class QuestionController extends Controller
 
             // return to survey overview
             return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
-        } else {
-            // TODO: redirect to permission denied page
-            print "Permission denied";
         }
+        // TODO: redirect to permission denied page
+        return "Permission denied";
     }
 
     /**
@@ -216,10 +208,8 @@ class QuestionController extends Controller
             // print_r($question_db_entry);
             // return to survey overview
             return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
-        } else {
-            // TODO: redirect to permission denied page
-            print "Permission denied";
         }
-
+        // TODO: redirect to permission denied page
+        return "Permission denied";
     }
 }

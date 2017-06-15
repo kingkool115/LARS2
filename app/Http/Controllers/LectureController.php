@@ -25,16 +25,6 @@ class LectureController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * This function checks if a user is permitted to use any functions of this class.
-     *
-     * @param $lecture_id does the user have the rights for this lecture_id?
-     * @return bool true if user has permissions, false if not.
-     */
-    private function hasPermission($lecture_id) {
-        $user = Auth::user();
-        return sizeof(DB::table('lecture')->where(['user_id' => $user['id'], 'id' => $lecture_id])->get()) > 0;
-    }
 
     /**
      * This function checks if a lecture with given survey id exists in DB.
