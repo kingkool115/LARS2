@@ -43,7 +43,7 @@ class QuestionController extends Controller
         if ($this->hasPermission($lecture_id)) {
 
             // check if lecture, chapter, survey, slide_number belong to each other.
-            if ($this->checkUrlConstellation($lecture_id, $chapter_id, $survey_id)) {
+            if ($this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
 
                 $question = DB::table('questions')->where(['survey_id' => $survey_id, "slide_number" => $slide_number])->get();
 

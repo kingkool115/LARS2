@@ -10,6 +10,8 @@ namespace App\Http\Controllers;
 
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
+use Carbon\Carbon;
 use App\PushBots\PushBots;
 
 class ApiController extends Controller
@@ -80,41 +82,80 @@ class ApiController extends Controller
         }
     }
 
+
+    /**
+     * This function checks whether a slide_number of the current presentation contains question or not.
+     *
+     * @param $survey_id    survey_id of the current running survey.
+     * @param $slide_number slide_number that belongs to that survey and has to be checked for a question.
+     * @return True if slide_number has a question. Else false.
+     */
+    function slideNumberHasQuestion($survey_id, $slide_number) {
+        return DB::table('questions')->where(['survey_id' => $survey_id, 'slide_number' => $slide_number])->get()->count() > 0;
+    }
+
+
+    /**
+     * This function is called by api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}.
+     *
+     * @param $lecture_id
+     * @param $chapter_id
+     * @param $survey_id
+     * @param $slide_number
+     * @return
+     */
+    public function switchSlide($lecture_id, $chapter_id, $survey_id, $slide_number) {
+        if ($this->hasPermission($lecture_id) && $this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
+
+            Request::session()->put('time_of_last_slide', Carbon::now()->toDateTimeString());
+            Request::session()->put('current_slide', $slide_number);
+
+            // if slide_number has a question, than push question
+            if ($this->slideNumberHasQuestion($survey_id, $slide_number)) {
+                $this->pushQuestion($lecture_id, $survey_id, $slide_number);
+                return "notification pushed ....";
+                // TODO: tell PPT if question results will be displayed on next slide or at the end.
+            }
+            // if a question is pushed at the first slide then init like:
+            // Request::session()->put('pushed_notifications_for_slides', [$slide_number]);
+            // else
+            Request::session()->put('pushed_notifications_for_slides', []);
+            return Request::session()->all();
+        }
+        return "You have no permissions to start that survey.";
+    }
+
     /**
      * Handles route /api/push/lecture/{lecture_id?}/chapter/{chapter_id?}/survey/{survey_id}/question/{slide_number}.
      * Pushes a certain question to the devices which have subscribed for that lecture.
      *
-     * @param $lecture_id   id of the lecture.
-     * @param $chapter_id   id of the chapter.
-     * @param $survey_id    id of the survey.
-     * @param $slide_number slide number the question belongs to.
+     * @param $lecture_id    only submit to devices which have subscribed for this id.
+     * @param $survey_id    needed to identify correct question which should be pushed.
+     * @param $slide_number needed to identify correct question which should be pushed.
      *
      * @return
      */
-    public function pushQuestion($lecture_id, $chapter_id, $survey_id, $slide_number) {
-        if ($this->hasPermission($lecture_id)) {
-            if ($this->checkUrlConstellation($lecture_id, $chapter_id, $survey_id)) {
-                // Push The notification with parameters
-                $pb = new PushBots();
-                // Application ID
-                $appID = '58ff58814a9efa8b758b4567';
-                // Application Secret
-                $appSecret = '01b7aa1b97cd22430683efd3e4f9a8d6';
-                $pb->App($appID, $appSecret);
-                // Notification Settings
-                $pb->Alert("Halo i bims!!");
-                $pb->Platform(1);
-                // android
-                // Push it !
-                $res = $pb->Push();
-                print $res['status'];
-                print $res['code'];
-                print $res['data'];
-            } else {
-                return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
-            }
-        } else {
-            return "Permission denied.";
-        }
+    public function pushQuestion($lecture_id, $survey_id, $slide_number) {
+        $question = (array)DB::table('questions')->where(['survey_id' => $survey_id, 'slide_number' => $slide_number])->get()[0];
+        $notification_title = $question['question'];
+
+        print $notification_title;
+        // Push The notification with parameters
+        $pb = new PushBots();
+        // Application ID
+        $appID = '58ff58814a9efa8b758b4567';
+        // Application Secret
+        $appSecret = '01b7aa1b97cd22430683efd3e4f9a8d6';
+        $pb->App($appID, $appSecret);
+        // Notification Settings
+        $pb->Alert($notification_title);
+        $pb->Platform(1);
+        // android
+        // Push it !
+        // TODO: send only to receiver with Tag ->$lecture_id
+        $res = $pb->Push();
+        print $res['status'];
+        print $res['code'];
+        print $res['data'];
     }
 }

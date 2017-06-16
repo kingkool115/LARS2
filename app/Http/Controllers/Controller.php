@@ -35,7 +35,7 @@ class Controller extends BaseController
      * @param $survey_id        id of the survey
      * @return bool             true if constellation of the parameters in url exists, else false.
      */
-    function checkUrlConstellation($lecture_id, $chapter_id, $survey_id) {
+    function checkLectureDependencies($lecture_id, $chapter_id, $survey_id) {
         $chapter_exists = DB::table('chapter')->where(['lecture_id' => $lecture_id])->get()->count() > 0;
         $survey_exists = DB::table('survey')->where(['chapter_id' => $chapter_id])->get()->count() > 0;
         $question_exists = DB::table('questions')

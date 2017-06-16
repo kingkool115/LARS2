@@ -24,6 +24,8 @@ Route::get('/', function () {
 
 Auth::routes();
 
+Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}', 'ApiController@switchSlide');
+
 Route::get('/home', 'HomeController@index')
     ->name('home');
 
