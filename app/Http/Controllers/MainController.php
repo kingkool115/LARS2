@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\QuestionModel;
 use App\util\Chapter;
 use App\util\Lecture;
 use App\ChapterModel;
@@ -43,7 +44,8 @@ class MainController extends Controller
     }
 
     /**
-     * TODO müssen so sortiert werden: lecture_id -> chapter_id -> survey_id
+     * Is needed for quick overview and for lectures table.
+     * Also called by PowerPoint over RestAPI.
      *
      * @return Response
      */
@@ -60,12 +62,11 @@ class MainController extends Controller
 
         // iterate through all surveys of DB
         foreach ($all_surveys as $survey) {
-            print_r($survey);
             // iterate through all chapters of DB
             foreach ($all_chapters as $chapter) {
 
                 // if survey belongs to chapter
-                if ($survey->chapter_id== $chapter->id) {
+                if ($survey->chapter_id == $chapter->id) {
 
                     // iterate through all lectures of DB
                     foreach ($all_lectures as $lecture) {
@@ -108,7 +109,9 @@ class MainController extends Controller
             }
         }
 
-        Debugbar::info($result);
+        if (request()->wantsJson()) {
+            return response()->json(LectureModel::all());
+        }
         return view('main', ['lectures' => $result]);
     }
 
@@ -121,8 +124,11 @@ class MainController extends Controller
     public function createNewLecture($lecture_name) {
         $user = Auth::user();
         if ($this->isAuthenticated()) {
-            $new_lecture_id = DB::table('lecture')->insertGetId(['name' => $lecture_name, 'user_id' => $user['id']]);
-            return redirect()->route('lecture', ['lecture_id' => $new_lecture_id]);
+            $new_lecture = new LectureModel();
+            $new_lecture->name = $lecture_name;
+            $new_lecture->user_id = $user['id'];
+            $new_lecture->save();
+            return redirect()->route('lecture', ['lecture_id' => $new_lecture->id]);
         } else {
             // TODO: Permission denied page.
             print "Permission denied";
@@ -147,25 +153,25 @@ class MainController extends Controller
                 // delete lecture entry.
                 // delete all chapter entries which belong to that lecture.
                 for ($x = 0; $x < sizeof($lecture_to_remove_array); $x++) {
-                    DB::table('lecture')->where(['id' => $lecture_to_remove_array[$x]])->delete();
-                    DB::table('chapter')->where(['lecture_id' => $lecture_to_remove_array[$x]])->delete();
+                    LectureModel::where(['id' => $lecture_to_remove_array[$x]])->delete();
+                    ChapterModel::where(['lecture_id' => $lecture_to_remove_array[$x]])->delete();
                 }
 
                 // delete all surveys which have a chapter_id which is no longer available in table chapter.
-                $all_surveys = DB::table('survey')->select('chapter_id')->get();
+                $all_surveys = SurveyModel::all();
                 foreach ($all_surveys as $survey) {
-                    $chapter_exists =  sizeof(DB::table('chapter')->where(['id' => $survey->chapter_id])->get()) > 0;
-                    if (!$chapter_exists) {
-                        DB::table('survey')->where(['chapter_id' => $survey->chapter_id])->delete();
+                    $chapter =  ChapterModel::where(['id' => $survey->chapter_id])->first();
+                    if (!isset($chapter)) {
+                        SurveyModel::where(['chapter_id' => $survey->chapter_id])->delete();
                     }
                 }
 
                 // delete all questions which have a survey_id which is no longer available in table survey.
-                $all_questions = DB::table('questions')->select('survey_id')->get();
+                $all_questions = QuestionModel::all();
                 foreach ($all_questions as $question) {
-                    $survey_exists =  sizeof(DB::table('survey')->where(['id' => $question->survey_id])->get()) > 0;
-                    if (!$survey_exists) {
-                        DB::table('questions')->where(['survey_id' => $question->survey_id])->delete();
+                    $survey =  SurveyModel::where(['id' => $question->survey_id])->first();
+                    if (!isset($survey)) {
+                        QuestionModel::where(['survey_id' => $question->survey_id])->delete();
                     }
                 }
             });

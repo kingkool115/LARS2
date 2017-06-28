@@ -35,6 +35,7 @@ class ChapterController extends Controller {
     /**
      * This function handles route lecture/{lecture_id}/chapter/{chapter_id}/surveys.
      * It gives an overview over all surveys that belong to a chapter.
+     * Also called by PowerPoint over RestAPI.
      *
      * @param $lecture_id is the id of the lecture this chapter belongs to.
      * @param $chapter_id is the id of the chapter the surveys belong to.
@@ -46,11 +47,18 @@ class ChapterController extends Controller {
                 $all_surveys = SurveyModel::where(['chapter_id' => $chapter_id])->get();
                 $chapter = ChapterModel::where(['id' => $chapter_id])->first();
                 $lecture = LectureModel::where('id', $lecture_id)->first();
+
+                // Accept: application/json
+                if (request()->wantsJson()) {
+                    return response()->json($all_surveys);
+                }
+
+                // Accept: text/html
                 return view('chapter', compact('all_surveys', 'chapter', 'lecture'));
+
             } else {
                 // TODO: chapter does not exist page.
                 print "Sorry, but your requested chapter does not exist.";
-
             }
         } else {
             // TODO: Permission denied page.

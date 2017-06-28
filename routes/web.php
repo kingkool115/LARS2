@@ -25,7 +25,7 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'ApiController@switchSlide');
+Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'PushControllerController@switchSlide');
 
 Route::get('/home', 'HomeController@index')
     ->name('home');
@@ -112,27 +112,8 @@ Route::post('create_new_survey/existing_lecture/{lecture_id}', 'CreateNewSurveyC
 Route::post('create_new_survey/existing_chapter/{lecture_id}/{chapter_id}', 'CreateNewSurveyController@postNewSurveyForExistingChapter')
     ->name('post_new_survey_for_existing_chapter');
 
-
-// API
-/**
- * Handles route /api/lectures.
- * Returns all existing lectures.
- *
- * @return lectures in json format.
- */
-Route::get('/api/lectures', function () {
-    $lectures = LectureModel::all();
-    return response()->json($lectures);
-});
-
-// Get all Chapters of a certain lecture
-Route::get('/api/lecture/{lecture_id}/chapters', 'ApiController@getAllChaptersOfLecture');
-
-// Get all Chapters of a certain lecture
-Route::get('/api/lecture/{lecture_id}/chapter/{chapter_id}/surveys', 'ApiController@getAllSurveysOfChapter');
-
 // TODO: call an url to start a survey session
 
 // Push a question to device, when this url is called.
 Route::get('/api/push/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}',
-    'ApiController@pushQuestion');
+    'PushControllerController@pushQuestion');

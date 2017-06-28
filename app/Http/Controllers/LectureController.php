@@ -42,21 +42,28 @@ class LectureController extends Controller
     /**
      * This function handles route lecture/{lecture_id}/chapters.
      * It gives an overview over all chapters that belong to a lecture.
+     * Also called by PowerPoint over RestAPI.
      *
      * @param $lecture_id is the id of the lecture of this view.
      * @return lecture.blade.php
      */
     public function showChapters($lecture_id) {
+        $all_chapters = ChapterModel::where(['lecture_id' => $lecture_id])->get();
+        $lecture = LectureModel::where(['id' => $lecture_id])->first();
 
         if ($this->hasPermission($lecture_id)) {
             if ($this->lectureExists($lecture_id)) {
-                $all_chapters = ChapterModel::where(['lecture_id' => $lecture_id])->get();
-                $lecture = LectureModel::where(['id' => $lecture_id])->first();
+
+                // Accept: application/json
+                if (request()->wantsJson()) {
+                    return response()->json($all_chapters);
+                }
+
+                // Accept: text/html
                 return view('lecture', compact('all_chapters', 'lecture', 'lecture_id'));
-            } else {
-                // TODO: chapter does not exist page.
-                print "Sorry, but your requested chapter does not exist.";
             }
+            // TODO: chapter does not exist page.
+            print "Sorry, but your requested chapter does not exist.";
         } else {
             // TODO: Permission denied page.
             print "Permission denied.";

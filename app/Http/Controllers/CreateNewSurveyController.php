@@ -13,6 +13,7 @@ use App\LectureModel;
 use App\SurveyModel;
 use App\util\Chapter;
 use App\util\Survey;
+use App\util\Lecture;
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,50 +58,51 @@ class CreateNewSurveyController extends Controller
             $result_chapters = [];
 
             // iterate through all surveys of DB
-            for ($x = 0; $x < sizeof($all_surveys); $x++) {
-                $survey = (array)$all_surveys[$x];
+            foreach ($all_surveys as $survey) {
 
                 // iterate through all chapters of DB
-                for ($y = 0; $y < sizeof($all_chapters); $y++) {
-                    $chapter = (array)$all_chapters[$y];
+                foreach ($all_chapters as $chapter) {
 
                     // if survey belongs to chapter
-                    if ($survey['chapter_id'] == $chapter['id']) {
+                    if ($survey->chapter_id == $chapter->id) {
 
                         // iterate through all lectures of DB
-                        for ($z = 0; $z < sizeof($all_lectures); $z++) {
-                            $lecture = (array)$all_lectures[$z];
+                        foreach ($all_lectures as $lecture) {
 
                             // if chapter belongs to lecture of DB.
-                            if ($chapter['lecture_id'] == $lecture['id']) {
+                            if ($chapter->lecture_id == $lecture->id) {
 
                                 // iterate through $result
                                 foreach ($result as $lecture_of_results) {
 
                                     // if lecture already exists in our result list, then just
-                                    if ($lecture_of_results->getId() == $lecture['id']) {
+                                    if ($lecture_of_results->getId() == $lecture->id) {
 
-                                        // if chapter already exists -> only a new survey has to be added to the chapter.
-                                        if ($lecture_of_results->check_if_chapter_exists($chapter['id'])) {
-                                            $result_surveys = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
-                                            $lecture_of_results->getChapterById($chapter['id'])->addSurvey($result_surveys);
-                                            break 2;    // break 2 loops -> continue with nex survey of $all_surveys
+                                        // if lecture already exists in our result list, then just
+                                        if ($lecture_of_results->getId() == $lecture->id) {
 
-                                            // if chapter does not exist in this lecture -> create new chapter with survey and
-                                            // add it to existing lecture in result list.
-                                        } else {
-                                            $result_surveys = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
-                                            $result_chapters = new Chapter($chapter['id'], $chapter['name'], $result_surveys);
-                                            $lecture_of_results->addChapter($result_chapters);
-                                            break 2;    // break 2 loops -> continue with nex survey of $all_surveys
+                                            // if chapter already exists -> only a new survey has to be added to the chapter.
+                                            if ($lecture_of_results->check_if_chapter_exists($chapter->id)) {
+                                                $result_surveys = new Survey($survey->id, $survey->name, $chapter->id, null);
+                                                $lecture_of_results->getChapterById($chapter->id)->addSurvey($result_surveys);
+                                                break 2;    // break 2 loops -> continue with nex survey of $all_surveys
+
+                                                // if chapter does not exist in this lecture -> create new chapter with survey and
+                                                // add it to existing lecture in result list.
+                                            } else {
+                                                $result_surveys = new Survey($survey->id, $survey->name, $chapter->id, null);
+                                                $result_chapters = new Chapter($chapter->id, $chapter->name, $result_surveys);
+                                                $lecture_of_results->addChapter($result_chapters);
+                                                break 2;    // break 2 loops -> continue with nex survey of $all_surveys
+                                            }
                                         }
                                     }
                                 }
 
                                 // if lecture does not exists in our result list -> create a new lecture and add it to result list.
-                                $result_surveys = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
-                                $result_chapters = new Chapter($chapter['id'], $chapter['name'], $result_surveys);
-                                $result_lectures = new Lecture($lecture['id'], $lecture['name'], $result_chapters);
+                                $result_surveys = new Survey($survey->id, $survey->name, $chapter->id, null);
+                                $result_chapters = new Chapter($chapter->id, $chapter->name, $result_surveys);
+                                $result_lectures = new Lecture($lecture->id, $lecture->name, $result_chapters);
                                 $result[] = $result_lectures;
                                 break;
                             }
@@ -129,9 +131,24 @@ class CreateNewSurveyController extends Controller
         $survey_id = 0;
 
         DB::transaction(function() use ($user, $lecture_name, &$lecture_id, $chapter_name, &$chapter_id, $survey_name, &$survey_id) {
-            $lecture_id = DB::table('lecture')->insertGetId(['name' => $lecture_name, 'user_id' => $user['id']]);
-            $chapter_id = DB::table('chapter')->insertGetId(['name' => $chapter_name, 'lecture_id' => $lecture_id]);
-            $survey_id = DB::table('survey')->insertGetId(['name' => $survey_name, 'chapter_id' => $chapter_id]);
+            $new_lecture = new LectureModel();
+            $new_lecture->name = $lecture_name;
+            $new_lecture->user_id = $user['id'];
+            $new_lecture->save();
+
+            $new_chapter = new ChapterModel();
+            $new_chapter->name = $chapter_name;
+            $new_chapter->lecture_id = $new_lecture->id;
+            $new_chapter->save();
+
+            $new_survey = new SurveyModel();
+            $new_survey->name = $survey_name;
+            $new_survey->chapter_id = $new_chapter->id;
+            $new_survey->save();
+
+            $lecture_id = $new_lecture->id;
+            $chapter_id = $new_chapter->id;
+            $survey_id = $new_survey->id;
         });
 
         return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
@@ -154,8 +171,18 @@ class CreateNewSurveyController extends Controller
         $survey_id = 0;
 
         DB::transaction(function() use ($lecture_id, $chapter_name, &$chapter_id, $survey_name, &$survey_id) {
-            $chapter_id = DB::table('chapter')->insertGetId(['name' => $chapter_name, 'lecture_id' => $lecture_id]);
-            $survey_id = DB::table('survey')->insertGetId(['name' => $survey_name, 'chapter_id' => $chapter_id]);
+            $new_chapter = new ChapterModel();
+            $new_chapter->name = $chapter_name;
+            $new_chapter->lecture_id = $lecture_id;
+            $new_chapter->save();
+
+            $new_survey = new SurveyModel();
+            $new_survey->name = $survey_name;
+            $new_survey->chapter_id = $new_chapter->id;
+            $new_survey->save();
+
+            $chapter_id = $new_chapter->id;
+            $survey_id = $new_survey->id;
         });
 
         return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
@@ -177,7 +204,12 @@ class CreateNewSurveyController extends Controller
         $survey_id = 0;
 
         DB::transaction(function() use ($lecture_id, $chapter_id, $survey_name, &$survey_id) {
-            $survey_id = DB::table('survey')->insertGetId(['name' => $survey_name, 'chapter_id' => $chapter_id]);
+            $new_survey = new SurveyModel();
+            $new_survey->name = $survey_name;
+            $new_survey->chapter_id = $chapter_id;
+            $new_survey->save();
+
+            $survey_id = $new_survey->id;
         });
 
         return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
