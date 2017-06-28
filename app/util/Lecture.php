@@ -1,11 +1,9 @@
 <?php
 
-namespace App;
+namespace App\util;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Chapter;
 
-class lecture
+class Lecture
 {
     private $id;
     private $name;

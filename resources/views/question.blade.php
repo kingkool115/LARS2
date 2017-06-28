@@ -51,21 +51,21 @@
         @yield('content')
     @else
         <div id="topic">
-            <a href="{{route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id] )}}"> Survey '{{$survey_name}}' </a><br/>
-            @if ($edit_form)
-                Edit
+            <a href="{{route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id] )}}"> Survey '{{$survey->name}}' </a><br/>
+            @if (isset($question))
+                Edit {{$question->question}}
             @else
-                Create
-            @endif question for slide number {{$slide_number}}
+                Create new question
+            @endif
         </div>
 
     <!-- Radio Buttons to select type of question -->
     <form onclick="displayCorrectForm()">
         <input type="radio" id="multiple-choice-radio" name="question-type" value="multiple-choice"
-               @if($edit_form && !$question['is_text_response']) checked @endif required>
+               @if(isset($question) && !$question->is_text_response) checked @endif required>
                             Multiple choice question<br>
         <input type="radio" id="text-response-radio" name="question-type" value="text-response"
-               @if(($edit_form && $question['is_text_response']) || !$edit_form) checked @endif required>
+               @if((isset($question) && $question->is_text_response) || !isset($question)) checked @endif required>
                                 Text respone question
     </form>
     <br>
@@ -74,24 +74,30 @@
     <br>
 
     <!-- Form to create a text response question -->
-    <form id="text-response-form" action="{{route('postTextResponseQuestion', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => $slide_number])}}"
+    <form id="text-response-form" action="{{route('postTextResponseQuestion', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id])}}"
           method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
         <div class="form-group question-form">
+
+            <!-- In case we want to just edit an existing question pass the question id-->
+            @if(isset($question))
+                <input type="hidden" name="question_id" value="{{$question->id}}">
+            @endif
+
             <!-- Question -->
             <label for="question">Question</label>
             <!-- has to be this long line due to text intend issues when breaking lines between textarea tags-->
             <textarea rows="4" cols="50" class="form-control" name="question"
-                      required>@if($edit_form && isset($question['correct_text_response'])){{$question['question']}}@endif</textarea>
+                      required>@if(isset($question) && $question->is_text_response){{$question->question}}@endif</textarea>
 
             <!-- Image Upload -->
             {{ csrf_field() }}
             <label id="image-upload" for="question-image-text-response">Select image</label><br/>
             <div class="file-upload-area">
                 <span id="actual-image-text-response"> Actual Image: </span>
-                @if($edit_form && $question['image_path'])
+                @if(isset($question) && $question->image_path)
                     <img id="display-image-text-response" width="300" height="200" onerror="this.style.visibility='hidden'" src="<?php
-                    if ($question['is_text_response']) {
-                        echo asset("storage/" . $question['image_path']);
+                    if ($question->is_text_response) {
+                        echo asset("storage/" . $question->image_path);
                     }?>" ><br><br>
                 @else
                     <img id="display-image-text-response" onerror="this.style.visibility='hidden'"  width="300" height="200" src=""><br><br>
@@ -103,22 +109,17 @@
 
             <!-- Correct answer -->
             <label id="correct-answer" for="correct_answer">Correct answer</label>
-            @if($edit_form && isset($question['correct_text_response']))
-                <input type="text" class="form-control" name="correct-answer" value="{{$question['correct_text_response']}}" required><br><br>
+            @if(isset($question) && isset($answers) && $answers->count() < 2)
+                @foreach ($answers as $answer)
+                    <input type="text" class="form-control" name="correct-answer" value="{{$answer->answer}}" required><br><br>
+                @endforeach
             @else
                 <input type="text" class="form-control" name="correct-answer" required><br><br>
             @endif
 
-            <!-- Choose where to show the results of the students -->
-            <label for="when-to-show-results"> When do you want to display the results of the question?</label><br>
-            <input type="radio" name="when-to-show-results" value="next-slide"
-                   @if($edit_form && $question['show_result_on_next_slide']) checked @endif required> Show results on next slide<br>
-            <input type="radio" name="when-to-show-results" value="end-of-chapter"
-                   @if($edit_form && !$question['show_result_on_next_slide']) checked @endif> Show results at the end of chapter<br><br>
-
             <!-- Submit Button -->
             <button id="submit-question-button"class="btn btn-primary" type="submit">
-                @if($edit_form)
+                @if(isset($question))
                     Save
                 @else
                     Create
@@ -129,22 +130,28 @@
     </form>
 
     <!-- Form to create a multiple choice question -->
-    <form id="multiple-choice-form" style="display: none" action="{{route('postMultipleChoiceQuestion', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => $slide_number])}}"
+    <form id="multiple-choice-form" style="display: none" action="{{route('postMultipleChoiceQuestion', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id])}}"
           method="post" enctype="multipart/form-data" autocomplete="off"> <!-- when page is reloaded, than reload form from DB.  -->
         <div class="form-group question-form">
+
+            <!-- In case we want to just edit an existing question pass the question id-->
+            @if(isset($question))
+                <input type="hidden" name="question_id" value="{{$question->id}}">
+            @endif
+
             <!-- Question -->
             <textarea rows="4" cols="50" class="form-control" name="question"
-                      required>@if($edit_form && sizeof($question['correct_text_response']) == 0){{$question['question']}}@endif</textarea>
+                      required>@if(isset($question) && !$question->is_text_response){{$question->question}}@endif</textarea>
 
             <!-- Image Upload -->
             {{ csrf_field() }}
             <label id="image-upload" for="question-image-multiple-choice">Select image</label><br/>
                 <div class="file-upload-area">
                     <span id="actual-image-multiple-choice"> Actual Image: </span>
-                    @if($edit_form && $question['image_path'])
+                    @if(isset($question) && $question->image_path)
                         <img id="display-image-multiple-choice" width="300" height="200" onerror="this.style.visibility='hidden'" src="<?php
-                        if (!$question['is_text_response']) {
-                            echo asset("storage/" . $question['image_path']);
+                        if (!$question->is_text_response) {
+                            echo asset("storage/" . $question->image_path);
                         }?>" ><br><br>
                     @else
                         <img id="display-image-multiple-choice" width="300" height="200" onerror="this.style.visibility='hidden'" src=""><br><br>
@@ -153,37 +160,54 @@
                 </div>
             <br><br>
 
-            <!-- Max. 8 possible answers -->
+            <!-- at least. 2 possible answers -->
             <label for="correct-answer"> Create your possible answers and mark the correct ones</label><br><br>
-            @for ($x = 1; $x < 8; $x++)
-                <label id="correct_answer_{{$x}}" for="correct_answer">Answer {{$x}}</label>
-                <div style="float: right">
-                    @if ($edit_form && !$question['is_text_response'] && sizeof(explode('-', $question['correct_answers'])) > $x && explode('-', $question['correct_answers'])[$x - 1])
-                        <input type="checkbox" name="is_answer_correct_{{$x}}" id="correct_answer_checkbox_{{$x}}" checked> correct
-                    @else
-                        <input type="checkbox" name="is_answer_correct_{{$x}}" id="correct_answer_checkbox_{{$x}}" > correct
-                    @endif
-                </div>
-                <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x}}" id="possible_answer_{{$x}}"
-                    >@if ($edit_form && !isset($question['correct_text_response'])){{$question['answer_' . $x]}}@endif</textarea>
-                <br>
-            @endfor
+            <div id="container_possible_answers">
+                <!-- if we want to create a new question or the question we want to edit was a text_response_question -->
+                @if(!isset($question))
+                    <!-- empty possible answer fields -->
+                    @for ($x = 1; $x < 3; $x++)
+                        <div id="answer_container_{{$x + 1}}">
+                            <label id="correct_answer_{{$x}}" for="correct_answer">Answer {{$x}}</label>
+                            <div style="float: right">
+                                <input type="checkbox" name="is_answer_correct_{{$x}}" id="correct_answer_checkbox_{{$x}}" > correct
+                                <input type="image" class="remove_icon" src="/storage/remove_icon.png" onclick="removeQuestion({{$x + 1}}); return false;" />
+                            </div>
+                            <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x}}" id="possible_answer_{{$x}}"></textarea>
+                            <br>
+                        </div>
+                    @endfor
+                @else
+                    <!-- possible answer fields with saved content -->
+                    @foreach ($answers as $x => $answer)
+                        <div id="answer_container_{{$x + 1}}">
+                            <label id="correct_answer_{{$x + 1}}" for="correct_answer">Answer {{$x + 1}}</label>
+                            <div style="float: right">
+                                @if (isset($question) && !$question->is_text_response && $answer->is_correct)
+                                    <input type="checkbox" name="is_answer_correct_{{$x + 1}}" id="correct_answer_checkbox_{{$x + 1}}" checked> correct
+                                @else
+                                    <input type="checkbox" name="is_answer_correct_{{$x + 1}}" id="correct_answer_checkbox_{{$x + 1}}" > correct
+                                @endif
+                                    <input type="image" class="remove_icon" src="/storage/remove_icon.png" onclick="removeQuestion({{$x + 1}}); return false;"/>
+                            </div>
+                            <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x + 1}}" id="possible_answer_{{$x + 1}}"
+                            >@if (isset($question->id) && !$question->is_text_response){{$answer->answer}}@endif</textarea>
+                            <br>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+            <!-- Add answer Button -->
+            <button id="add-answer-button"class="btn btn-primary" onclick="addQuestion(); return false;"> Add answer </button>
             <br>
             <br>
-
-            <!-- Choose where to show the results of the students -->
-            <label for="when-to-show-results"> When do you want to display the results of the question?</label><br>
-            <input type="radio" name="when-to-show-results" value="next-slide"
-                   @if($edit_form && $question['show_result_on_next_slide']) checked @endif required> Show results on next slide<br>
-            <input type="radio" name="when-to-show-results" value="end-of-chapter"
-                   @if($edit_form && !$question['show_result_on_next_slide']) checked @endif> Show results at the end of chapter<br><br>
 
             <!-- Error Message if answers not filled out correctly-->
             <div id="error-message"></div>
 
             <!-- Submit Button -->
             <button id="submit-question-button"class="btn btn-primary" type="submit" onclick="return validateQuestions()">
-                @if($edit_form)
+                @if(isset($question))
                     Save
                 @else
                     Create
@@ -205,7 +229,7 @@
         var modal = document.getElementById('myModal');
 
         // Get the image and insert it inside the modal - use its "alt" text as a caption
-        @if(isset($question['is_text_response']) && $question['is_text_response'])
+        @if(isset($question->is_text_response))
             var img = document.getElementById('display-image-text-response');
         @else
             var img = document.getElementById('display-image-multiple-choice');
@@ -229,16 +253,130 @@
     </script>
 
     <script>
+        function addQuestion(){
+            // Number of current possible answers
+            var actualNumberOfPossibleAnswers = document.getElementById("container_possible_answers").childElementCount;
+            // because every question is composed of 4 html tags
+            var newAnswerIndex = actualNumberOfPossibleAnswers + 1;
+
+            // Container <div> where dynamic content will be placed
+            var container_possible_answers = document.getElementById("container_possible_answers");
+
+            // Append a node with a random text
+            // create label
+            var label = document.createElement("label");
+            label.id = "correct_answer_" + newAnswerIndex;
+            label.for = "correct_answer";
+            label.innerHTML = "Answer " + newAnswerIndex;
+
+            // create div for checkbox and textarea
+            var div = document.createElement("div");
+            div.style.float = "right";
+
+            // create checkbox
+            var checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = "is_answer_correct_" + newAnswerIndex;
+            checkbox.id = "correct_answer_checkbox_" + newAnswerIndex;
+
+            // create 'correct'-text for checkbox
+            var span = document.createElement("span");
+            span.innerHTML = " correct";
+
+            // create remove button
+            var removeButton = document.createElement("input");
+            removeButton.type = "image";
+            removeButton.className = "remove_icon";
+            removeButton.src = "/storage/remove_icon.png";
+            removeButton.addEventListener('click', function() {
+                removeQuestion(newAnswerIndex);
+            }, false);
+
+            div.appendChild(checkbox);
+            div.appendChild(span);
+            div.appendChild(removeButton);
+
+            // create textarea
+            var textarea = document.createElement("textarea");
+            textarea.rows = "1";
+            textarea.cols = "50";
+            textarea.className = "form-control";
+            textarea.id = "possible_answer_" + newAnswerIndex;
+            textarea.name = "possible_answer_" + newAnswerIndex;
+
+            // container of a one answer
+            var answer_container = document.createElement("div");
+            answer_container.id = "answer_container_" + newAnswerIndex;
+
+            // add to container
+            answer_container.appendChild(label);
+            answer_container.appendChild(div);
+            answer_container.appendChild(textarea);
+            answer_container.appendChild(document.createElement("br"));
+
+            // container of all answers
+            container_possible_answers.appendChild(answer_container);
+        }
+
+        /**
+         * Remove a possible answer when clicking on remove button.
+         **/
+        function removeQuestion(index) {
+            var container_possible_answers = document.getElementById("container_possible_answers");
+            var answer = document.getElementById("answer_container_" + index);
+            container_possible_answers.removeChild(answer);
+            updateAnswerIndexes();
+        }
+
+        /**
+         * This function is called after delete button of an answer is clicked.
+         * It will set the question again in a proper order [1, 2, 3, 4, ....].
+         **/
+        function updateAnswerIndexes() {
+            // Number of current possible answers
+            var actualNumberOfPossibleAnswers = document.getElementById("container_possible_answers").childElementCount;
+
+            // Container <div> where dynamic content will be placed
+            var containerPossibleAnswers = document.getElementById("container_possible_answers");
+
+            for (var x = 1; x < actualNumberOfPossibleAnswers + 1; x++) {
+
+                // Container <div> where dynamic content will be placed
+                var answerContainer = containerPossibleAnswers.children[x - 1];
+                answerContainer.id = "answer_container_" + x;
+
+                // update label indexes
+                var label = answerContainer.getElementsByTagName("label")[0];
+                label.id = "correct_answer_" + x;
+                label.for = "correct_answer";
+                label.innerHTML = "Answer " + x;
+
+                // update checkbox indexes
+                var div = answerContainer.getElementsByTagName("div")[0];
+                var checkbox = div.getElementsByTagName("input")[0];
+                checkbox.name = "is_answer_correct_" + x;
+                checkbox.id = "correct_answer_checkbox_" + x;
+
+                // update textare indexes
+                var textarea = answerContainer.getElementsByTagName("textarea")[0];
+                textarea.id = "possible_answer_" + x;
+                textarea.name = "possible_answer_" + x;
+
+            }
+        }
+
         function validateQuestions() {
             <!-- This function checks if at least one question in multiple choice mode is set to correct.-->
             <!-- It also checks if an empty text field is set to correct. -->
             var correct_answers = 0;
-            var checked_empty_answer_as_correct = false;
-            for (var x = 1; x < 8; x++) {
+            var empty_answer = false;
+            var actualNumberOfPossibleAnswers = document.getElementById("container_possible_answers").childElementCount;
+
+            for (var x = 1; x < actualNumberOfPossibleAnswers + 1; x++) {
                 var possible_answer = document.getElementById('possible_answer_' + x).value;
                 var is_checkbox_checked = document.getElementById('correct_answer_checkbox_' + x).checked;
-                if (possible_answer.trim().length == 0 && is_checkbox_checked) {
-                    checked_empty_answer_as_correct = true;
+                if (possible_answer.trim().length == 0) {
+                    empty_answer = true;
                 }
                 if (possible_answer.trim().length > 0 && is_checkbox_checked) {
                     correct_answers += 1;
@@ -249,8 +387,8 @@
                 document.getElementById("error-message").innerHTML = "You have to set at least one correct answer."
                 return false;
             }
-            if (checked_empty_answer_as_correct) {
-                document.getElementById("error-message").innerHTML = "You can not mark an empty answer as correct."
+            if (empty_answer) {
+                document.getElementById("error-message").innerHTML = "You can not have an empty answer."
                 return false;
             }
             if (correct_answers > 0) {

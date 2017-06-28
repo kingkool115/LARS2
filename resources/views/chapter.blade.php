@@ -52,8 +52,8 @@
         @yield('content')
     @else
         <div id="topic">
-            <a href="{{route('lecture', ['lecture_id' => $lecture_id])}}">Lecture {{$lecture_name['name']}}</a><br>
-            {{$chapter['name']}}
+            <a href="{{route('lecture', ['lecture_id' => $lecture->id])}}">Lecture {{$lecture->name}}</a><br>
+            {{$chapter->name}}
         </div>
 
         <table class="surveys_table">
@@ -70,15 +70,15 @@
                     <th></th>
                 </tr>
             @endfor
-            @foreach($result as $survey)
+            @foreach($all_surveys as $survey)
                 <tr class="survey_table_content">
                     <th>
-                        <a href="{{route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey['id']])}}">
-                            {{ $survey['name']}}
+                        <a href="{{route('survey', ['lecture_id' => $lecture->id, 'chapter_id' => $chapter->id, 'survey_id' => $survey->id])}}">
+                            {{ $survey->name}}
                         </a>
                     </th>
                     <th class="remove-checkboxes">
-                        <input id="survey_to_remove_{{$survey['id']}}" autocomplete="off" type="checkbox" name="survey-to-remove" onchange="displayHideRemoveButton();">
+                        <input id="survey_to_remove_{{$survey->id}}" autocomplete="off" type="checkbox" name="survey-to-remove" onchange="displayHideRemoveButton();">
                     </th>
                 </tr>
             @endforeach
@@ -102,7 +102,7 @@
      */
     function createNewSurvey() {
         var survey_name = document.getElementsByName("new_survey")[0].value;
-        var url = "{{route('create_survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_name' => 'new_survey_name'])}}";
+        var url = "{{route('create_survey', ['lecture_id' => $lecture->id, 'chapter_id' => $chapter->id, 'survey_name' => 'new_survey_name'])}}";
         url = url.replace('new_survey_name', survey_name);
         window.location.href = url;
     }
@@ -142,7 +142,7 @@
         }
         // remove last underline character
         slides_to_remove = slides_to_remove.slice(0, -1);
-        var url = '{{route('remove_surveys', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id])}}';
+        var url = '{{route('remove_surveys', ['lecture_id' => $lecture->id, 'chapter->id' => $chapter->id])}}';
         // put slides_to_remove as parameter into the url
         window.location.href = url + "?surveys_to_remove=" + slides_to_remove;
     }

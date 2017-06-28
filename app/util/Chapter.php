@@ -6,7 +6,7 @@
  * Time: 22:13
  */
 
-namespace App;
+namespace App\util;
 
 
 class Chapter
@@ -19,7 +19,7 @@ class Chapter
      * Chapter constructor.
      * @param $id
      * @param $name
-     * @param $surveys
+     * @param $survey
      */
     public function __construct($id, $name, $survey)
     {

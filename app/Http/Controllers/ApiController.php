@@ -26,18 +26,6 @@ class ApiController extends Controller
     }
 
     /**
-     * Handles route /api/lectures.
-     * Returns all lectures of a user.
-     *
-     * @return lectures in json format.
-     */
-    public function getAllLectures() {
-        $user = Auth::user();
-        $lectures = DB::table('lecture')->select('id', 'name')->where(['user_id' => $user['id']])->get();
-        return response()->json($lectures);
-    }
-
-    /**
      * Handles route /api/lecture/{lecture_id?}/chapters.
      * Returns all chapters of a certain lecture.
      *
@@ -104,7 +92,7 @@ class ApiController extends Controller
      * @param $slide_number
      * @return
      */
-    public function switchSlide($lecture_id, $chapter_id, $survey_id, $slide_number) {
+    protected function switchSlide($lecture_id, $chapter_id, $survey_id, $slide_number) {
         if ($this->hasPermission($lecture_id) && $this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
 
             Request::session()->put('time_of_last_slide', Carbon::now()->toDateTimeString());
@@ -112,8 +100,8 @@ class ApiController extends Controller
 
             // if slide_number has a question, than push question
             if ($this->slideNumberHasQuestion($survey_id, $slide_number)) {
-                $this->pushQuestion($lecture_id, $survey_id, $slide_number);
-                return "notification pushed ....";
+                // return if pushing notification was successful (200OK) or not.
+                return $this->pushQuestion($lecture_id, $survey_id, $slide_number)['status'];
                 // TODO: tell PPT if question results will be displayed on next slide or at the end.
             }
             // if a question is pushed at the first slide then init like:
@@ -135,11 +123,7 @@ class ApiController extends Controller
      *
      * @return
      */
-    public function pushQuestion($lecture_id, $survey_id, $slide_number) {
-        $question = (array)DB::table('questions')->where(['survey_id' => $survey_id, 'slide_number' => $slide_number])->get()[0];
-        $notification_title = $question['question'];
-
-        print $notification_title;
+    function pushQuestion($lecture_id, $survey_id, $slide_number) {
         // Push The notification with parameters
         $pb = new PushBots();
         // Application ID
@@ -147,15 +131,28 @@ class ApiController extends Controller
         // Application Secret
         $appSecret = '01b7aa1b97cd22430683efd3e4f9a8d6';
         $pb->App($appID, $appSecret);
+
+
+        // get correct question for the students from DB
+        $question = (array)DB::table('questions')->where(['survey_id' => $survey_id, 'slide_number' => $slide_number])->get()[0];
+
+        // 'lIco' is used to display image already in push notification, if there is any.
+        $question['lIco'] = $question['image_path'];
+
+        // Push The notification with parameters
         // Notification Settings
-        $pb->Alert($notification_title);
+        $pb->Payload($question);
+        // send only to user's who have subscribed for this lecture
+        $pb->Tags([$lecture_id]);
+        // The title when the push notification appears
+        $pb->Alert($question['question']);
         $pb->Platform(1);
         // android
         // Push it !
-        // TODO: send only to receiver with Tag ->$lecture_id
         $res = $pb->Push();
         print $res['status'];
         print $res['code'];
         print $res['data'];
+        return $res;
     }
 }

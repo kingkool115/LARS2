@@ -8,6 +8,9 @@
 
 namespace App\Http\Controllers;
 
+use App\AnswerModel;
+use App\QuestionModel;
+use App\SurveyModel;
 use Barryvdh\Debugbar\Facade as Debugbar;
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
@@ -24,39 +27,58 @@ class QuestionController extends Controller
     }
 
 
-    /** 
-     * This function routes to lecture/{lecture_id}/chapter/[chapter_id}/survey/{survey_id}/slide_number/{slide_number}
-     * TODO: Wenn der Link direkt eingegeben wird, dann muss überprüft werden, ob es für dieses survey_id nicht schon dieselbe slide_number gibt.
+    /**
+     * This function iks called by route
+     * lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_new_question.
      *
-     * @param $lecture_id the id of the lecture this question belongs to.
-     * @param $chapter_id the id of the chapter this question belongs to.
-     * @param $survey_id this question belongs to.
-     * @param $slide_number of powerpoint presentation this question belongs to.
-     * @return view question.blade.php
-     */
-    public function editQuestion($lecture_id, $chapter_id, $survey_id, $slide_number)
-    {
-        $survey_name = (array)DB::table('survey')->select('name')->where('id', $survey_id)->get()[0];
-        $survey_name = $survey_name['name'];
-
+     * @param $lecture_id   id of lecture the question belongs to.
+     * @param $chapter_id   id of chapter the question belongs to.
+     * @param $survey_id    id of survey the question belongs to.
+     * @return question view to edit new question.
+     **/
+    public function createNewQuestion($lecture_id, $chapter_id, $survey_id) {
         // check if user has permission for this lecture
         if ($this->hasPermission($lecture_id)) {
 
             // check if lecture, chapter, survey, slide_number belong to each other.
             if ($this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
+                $survey_name = SurveyModel::where('id', $survey_id)->first();
+                $survey_name = $survey_name->name;
+                print_r($survey_name);
+                return view('question', compact('edit_form',  'survey_name', 'lecture_id', 'chapter_id', 'survey_id'));
+            }
+            else {
+                return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
+            }
+        }
+        // TODO: redirect to permission denied page
+        return "Permission denied";
+    }
 
-                $question = DB::table('questions')->where(['survey_id' => $survey_id, "slide_number" => $slide_number])->get();
+    /** 
+     * This function routes to lecture/{lecture_id}/chapter/[chapter_id}/survey/{survey_id}/slide_number/{question_id}
+     *
+     * @param $lecture_id the id of the lecture this question belongs to.
+     * @param $chapter_id the id of the chapter this question belongs to.
+     * @param $survey_id this question belongs to.
+     * @param $question_id id of the question.
+     * @return view question.blade.php
+     */
+    public function editQuestion($lecture_id, $chapter_id, $survey_id, $question_id)
+    {
+        $survey = SurveyModel::where(['id' => $survey_id])->first();
 
-                // if we want to just edit an existing question
-                if (sizeof($question) > 0) {
-                    $question = (array)$question[0];
-                    $edit_form = 1;
-                    return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
-                // if we want to create a completely new question
-                } else {
-                    $edit_form = 0;
-                    return view('question', compact('edit_form', 'question', 'survey_name', 'slide_number', 'lecture_id', 'chapter_id', 'survey_id'));
-                }
+        // check if user has permission for this lecture
+        if ($this->hasPermission($lecture_id)) {
+
+
+            // check if lecture, chapter, survey, slide_number belong to each other.
+            if ($this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
+
+                $question = QuestionModel::where(['survey_id' => $survey_id, "id" => $question_id])->first();
+                $answers = AnswerModel::where(['question_id' => $question_id])->get();
+
+                return view('question', compact( 'question', 'answers', 'one_answer', 'survey', 'lecture_id', 'chapter_id', 'survey_id'));
             } else {
                 return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
             }
@@ -73,45 +95,25 @@ class QuestionController extends Controller
      * @param $lecture_id the id of the lecture this question belongs to.
      * @param $chapter_id the id of the chapter this question belongs to.
      * @param $survey_id this question belongs to.
-     * @param $slide_number of powerpoint presentation this question belongs to.
      * @return redirect to survey-view.
      * */
-    public function postTextResponseQuestion($lecture_id, $chapter_id, $survey_id, $slide_number) {
+    public function postTextResponseQuestion($lecture_id, $chapter_id, $survey_id) {
         $post_request = Request::all();
-        print_r($post_request);
+
         if ($this->hasPermission($lecture_id)) {
 
-            // if an image is uploaded
-            $file = request()->file('question-image-text-response');
-            if ($file != null) {
-                $ext = $file->guessClientExtension();
-                // users/{user_id}/{survey_id}/{slide_number}/
-                // TODO: store them somewhere else
-                // this file path will be saved into DB
-                $user = Auth::user();
-                $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
-                // actually the file is stored in public/question-images ...
-                $file->storeAs('public/' . $path,  $slide_number . "." . $ext);
-            }
+            // create an save question to db
+            $question = $this->createQuestion($post_request, $survey_id, true);
 
-            // finally create dictionary with all necessary entries for our DB.
-            // The key of this dictionary should be the same as the column names of table 'questions'.
-            $question_db_entry = array();
-            $question_db_entry['survey_id'] = $survey_id;
-            $question_db_entry['slide_number'] = $slide_number;
-            $question_db_entry['question'] = $post_request['question'];
-            $question_db_entry['correct_text_response'] = $post_request['correct-answer'];
-            // users/{user_id}/{survey_id}/{slide_number}/
-            if ($file != null) {
-                $question_db_entry['image_path'] = $path . '/' . $slide_number . '.' . $ext;
-            }
-            $question_db_entry['is_text_response'] = 1;
-            $question_db_entry['show_result_on_next_slide'] = $post_request['when-to-show-results'] == 'next-slide';
+            // first delete all answers of that question, if available
+            AnswerModel::where(['question_id' => $question->id])->delete();
 
-            // first try to delete row with this slide_number and survey_id
-            DB::table('questions')->where(['slide_number' => (string) $slide_number, 'survey_id' => (string)$survey_id])->delete();
-            // insert new row to table 'questions'
-            DB::table('questions')->insert($question_db_entry);
+            // save answer to that question
+            $answer = new AnswerModel();
+            $answer->answer = $post_request['correct-answer'];
+            $answer->is_correct = 1;
+            $answer->question_id = $question->id;
+            $answer->save();
 
             // return to survey overview
             return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
@@ -128,88 +130,101 @@ class QuestionController extends Controller
      * @param $lecture_id the id of the lecture this question belongs to.
      * @param $chapter_id the id of the chapter this question belongs to.
      * @param $survey_id this question belongs to.
-     * @param $slide_number of powerpoint presentation this question belongs to.
      * @return redirect to survey-view.
      * */
-    public function postMultipleChoiceQuestion($lecture_id, $chapter_id, $survey_id, $slide_number) {
-        //request()->file('question_for_slide_number-image')->store('question_for_slide_number-images/users/');
+    public function postMultipleChoiceQuestion($lecture_id, $chapter_id, $survey_id) {
         $post_request = Request::all();
-
+        //print_r($post_request);
         if ($this->hasPermission($lecture_id)) {
-            // if an image is uploaded
-            $file = request()->file('question-image-multiple-choice');
-            if ($file != null) {
-                $ext = $file->guessClientExtension();
-                // users/{user_id}/{survey_id}/{slide_number}/
-                // TODO: store them somewhere else
-                // this file path will be saved into DB
-                $user = Auth::user();
-                $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
-                // actually the file is stored in public/question-images ...
-                $file->storeAs('public/' . $path,  $slide_number . "." . $ext);
-            }
 
-            // create a dictionary of answers and if they are true or false
-            // answers = ['answer_1' => 1, 'answer_2' = 0, 'answer_3' => 0]
-            $answers = array();
+            $question = $this->createQuestion($post_request, $survey_id, false);
+
+            // first delete all answers of that question, if available
+            AnswerModel::where(['question_id' => $question->id])->delete();
+
+            // iterate answers from post_request and save them to db.
+            // answers = ['possible_answer_1' => 1, 'possible_answer_2' = 0, 'possible_answer_3' => 0]
             foreach ($post_request as $key => $value) {
                 if (starts_with($key, 'possible_answer_')) {
                     // which answer
                     $x = explode("possible_answer_", $key)[1];
+
                     // answer content
-                    $possible_answer = $post_request['possible_answer_' . $x];
-                    if (strlen(trim($possible_answer)) < 1) {
+                    $answer_content = $post_request['possible_answer_' . $x];
+
+                    // if answers field is empty
+                    if (strlen(trim($answer_content)) < 1) {
                         continue;
                     }
-                    $answers[$possible_answer] = 0;
+
+                    // check if answer is correct
+                    $is_answer_correct = 0;
                     if (isset($post_request['is_answer_correct_' . $x])) {
-                        $answers[$possible_answer] = 1;
+                        $is_answer_correct = 1;
                     }
+
+                    $answer = new AnswerModel();
+                    $answer->question_id = $question->id;
+                    $answer->answer = $answer_content;
+                    $answer->is_correct = $is_answer_correct;
+                    $answer->save();
                 }
             }
 
-            // finally create dictionary with all necessary entries for our DB.
-            // The key of this dictionary should be the same as the column names of table 'questions'.
-            $question_db_entry = array();
-            $question_db_entry['survey_id'] = $survey_id;
-            $question_db_entry['slide_number'] = $slide_number;
-            $question_db_entry['question'] = $post_request['question'];
-
-            if ($file != null) {
-                $question_db_entry['image_path'] = $path . '/' . $slide_number . '.' . $ext;
-            }
-
-            $answers_counter = 1;
-            $correct_answers = "";
-
-            // used to see if this question is a multiple choice multiple selection question. yes if > 1.
-            $correct_answers_counter = 0;
-
-            // collect possible answers from form.
-            foreach ($answers as $answer => $is_correct) {
-                $question_db_entry['answer_' . $answers_counter] = $answer;
-                $correct_answers = $correct_answers . $is_correct . "-";
-                if ($is_correct == 1) {
-                    $correct_answers_counter += 1;
-                }
-                $answers_counter += 1;
-            }
-
-            $question_db_entry['correct_answers'] = $correct_answers;
-            $question_db_entry['is_multi_select'] = $correct_answers_counter > 1;
-            $question_db_entry['is_text_response'] = 0;
-            $question_db_entry['show_result_on_next_slide'] = $post_request['when-to-show-results'] == 'next-slide';
-
-            // first try to delete row with this slide_number and survey_id
-            DB::table('questions')->where(['slide_number' => (string) $slide_number, 'survey_id' => (string)$survey_id])->delete();
-            // insert new row to table 'questions'
-            DB::table('questions')->insert($question_db_entry);
-
-            // print_r($question_db_entry);
             // return to survey overview
             return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
         }
         // TODO: redirect to permission denied page
         return "Permission denied";
+    }
+
+    /**
+     * Create a question into questions-database when clicking on submit button in question-view.
+     *
+     * @param $post_request contains all necessary information about the posted question.
+     * @param $survey_id is the id of survey the question belongs to.
+     * @param $is_text_response true if it's a text-response-question, else false.
+     * @return QuestionModel instance of the save question.
+     **/
+    private function createQuestion($post_request, $survey_id, $is_text_response) {
+
+        if (isset($post_request['question_id'])) {
+            // just update existing question
+            $question = QuestionModel::find($post_request['question_id']);
+        } else {
+            // insert a new question to questions table.
+            $question = new QuestionModel();
+        }
+
+        $question->question  = $post_request['question'];
+        $question->survey_id = $survey_id;
+        $question->is_text_response = $is_text_response;
+        $question->save();
+
+        // if an image is uploaded
+        if ($is_text_response) {
+            $file = request()->file('question-image-text-response');
+        } else {
+
+            $file = request()->file('question-image-multiple-choice');
+        }
+
+
+        if ($file != null) {
+            $ext = $file->guessClientExtension();
+            // users/{user_id}/{survey_id}/{slide_number}/
+            // TODO: store them somewhere else
+            // this file path will be saved into DB
+            $user = Auth::user();
+            $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
+            // actually the file is stored in public/question-images ...
+            $file->storeAs('public/' . $path,  $question->id . "." . $ext);
+            $question->image_path = $path . '/' . $question->id . '.' . $ext;
+        } else {
+            $question->image_path = null;
+        }
+        $question->save();
+
+        return $question;
     }
 }

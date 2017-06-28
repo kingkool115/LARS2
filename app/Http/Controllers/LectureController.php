@@ -8,10 +8,13 @@
 
 namespace App\Http\Controllers;
 
-use \Illuminate\Support\Facades\Auth;
+use App\AnswerModel;
+use App\ChapterModel;
+use App\LectureModel;
+use App\QuestionModel;
+use App\SurveyModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
-use Barryvdh\Debugbar\Facade as Debugbar;
 
 class LectureController extends Controller
 {
@@ -33,7 +36,7 @@ class LectureController extends Controller
      * @return bool true, if survey exists in DB. Else false.
      */
     private function lectureExists($lecture_id){
-        return sizeof(DB::table('lecture')->where('id', $lecture_id)->get()) > 0;
+        return LectureModel::where('id', $lecture_id)->get()->count() > 0;
     }
 
     /**
@@ -47,20 +50,12 @@ class LectureController extends Controller
 
         if ($this->hasPermission($lecture_id)) {
             if ($this->lectureExists($lecture_id)) {
-                $all_chapters = DB::table('chapter')->select('id', 'name')->where(['lecture_id' => $lecture_id])->get();
-                $lecture = (array)DB::table('lecture')->select('id', 'name')->where(['id' => $lecture_id])->get()[0];
-
-                $result = [];
-                foreach ($all_chapters as $chapter) {
-                    $result[] = (array)$chapter;
-                }
-
-                //Debugbar::warning($result);
-                return view('lecture', compact('result', 'lecture', 'lecture_id'));
+                $all_chapters = ChapterModel::where(['lecture_id' => $lecture_id])->get();
+                $lecture = LectureModel::where(['id' => $lecture_id])->first();
+                return view('lecture', compact('all_chapters', 'lecture', 'lecture_id'));
             } else {
                 // TODO: chapter does not exist page.
                 print "Sorry, but your requested chapter does not exist.";
-
             }
         } else {
             // TODO: Permission denied page.
@@ -77,8 +72,11 @@ class LectureController extends Controller
      */
     public function createNewChapter($lecture_id, $chapter_name) {
         if ($this->hasPermission($lecture_id)) {
-            $new_chapter_id = DB::table('chapter')->insertGetId(['lecture_id' => $lecture_id, 'name' => $chapter_name]);
-            return redirect()->route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $new_chapter_id]);
+            $new_chapter = new ChapterModel();
+            $new_chapter->lecture_id = $lecture_id;
+            $new_chapter->name = $chapter_name;
+            $new_chapter->save();
+            return redirect()->route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $new_chapter->id]);
         } else {
             // TODO: Permission denied page.
             print "Permission denied";
@@ -104,16 +102,17 @@ class LectureController extends Controller
                 // delete chapter entry.
                 // delete all survey entries which belong to that chapter.
                 for ($x = 0; $x < sizeof($chapter_to_remove_array); $x++) {
-                    DB::table('chapter')->where(['id' => $chapter_to_remove_array[$x]])->delete();
-                    DB::table('survey')->where(['chapter_id' => $chapter_to_remove_array[$x]])->delete();
+                    ChapterModel::where(['id' => $chapter_to_remove_array[$x]])->delete();
+                    SurveyModel::where(['chapter_id' => $chapter_to_remove_array[$x]])->delete();
                 }
 
                 // delete all questions which have a survey_id which is no longer available in table survey.
-                $all_questions = DB::table('questions')->select('survey_id')->get();
+                $all_questions = QuestionModel::all();
                 foreach ($all_questions as $question) {
-                    $survey_exists =  sizeof(DB::table('survey')->where(['id' => $question->survey_id])->get()) > 0;
+                    $survey_exists =  SurveyModel::where(['id' => $question->survey_id])->get()->count() > 0;
                     if (!$survey_exists) {
-                        DB::table('questions')->where(['survey_id' => $question->survey_id])->delete();
+                        QuestionModel::where(['survey_id' => $question->survey_id])->delete();
+                        AnswerModel::where(['question_id' => $question->id])->delete();
                     }
                 }
             });
@@ -121,7 +120,6 @@ class LectureController extends Controller
             // TODO: Permission denied page
             print "Permission denied";
         }
-
         return redirect()->route('lecture', ['lecture_id' => $lecture_id]);
     }
 }

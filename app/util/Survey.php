@@ -6,7 +6,7 @@
  * Time: 22:16
  */
 
-namespace App;
+namespace App\util;
 
 
 class Survey

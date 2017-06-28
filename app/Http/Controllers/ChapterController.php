@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\ChapterModel;
+use App\LectureModel;
+use App\SurveyModel;
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
@@ -22,11 +25,11 @@ class ChapterController extends Controller {
     /**
      * This function checks if a survey with given survey id exists in DB.
      *
-     * @param $survey_id id of the survey to check.
+     * @param $chapter_id id of the chapter to check.
      * @return bool true, if survey exists in DB. Else false.
      */
     private function chapterExists($chapter_id){
-        return sizeof(DB::table('chapter')->where('id', $chapter_id)->get()) > 0;
+        return ChapterModel::where('id', $chapter_id)->get()->count() > 0;
     }
 
     /**
@@ -38,23 +41,12 @@ class ChapterController extends Controller {
      * @return chapter.blade.php
      */
     public function showSurveys($lecture_id, $chapter_id) {
-
-        Debugbar::warning($chapter_id);
         if ($this->hasPermission($lecture_id)) {
             if ($this->chapterExists($chapter_id)) {
-            $all_surveys = DB::table('survey')->select('id', 'name')->where(['chapter_id' => $chapter_id])->get();
-            $chapter = (array)DB::table('chapter')->select('id', 'name')->where(['id' => $chapter_id])->get()[0];
-
-            // TODO: kann man bestimmt schöner machen
-            $lecture_name = (array)DB::table('lecture')->select('name')->where('id', $lecture_id)->get()[0];
-
-            $result = [];
-            foreach ($all_surveys as $survey) {
-                $result[] = (array)$survey;
-            }
-
-            Debugbar::warning($result);
-            return view('chapter', compact('result', 'chapter', 'lecture_name', 'lecture_id', 'chapter_id'));
+                $all_surveys = SurveyModel::where(['chapter_id' => $chapter_id])->get();
+                $chapter = ChapterModel::where(['id' => $chapter_id])->first();
+                $lecture = LectureModel::where('id', $lecture_id)->first();
+                return view('chapter', compact('all_surveys', 'chapter', 'lecture'));
             } else {
                 // TODO: chapter does not exist page.
                 print "Sorry, but your requested chapter does not exist.";
@@ -76,8 +68,12 @@ class ChapterController extends Controller {
      */
     public function createNewSurvey($lecture_id, $chapter_id, $survey_name) {
         if ($this->hasPermission($lecture_id)) {
-            $new_survey_id = DB::table('survey')->insertGetId(['chapter_id' => $chapter_id, 'name' => $survey_name]);
-            return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $new_survey_id]);
+            $new_survey = new SurveyModel();
+            $new_survey->chapter_id = $chapter_id;
+            $new_survey->name = $survey_name;
+            $new_survey->save();
+
+            return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $new_survey->id]);
         } else {
             // TODO: Permission denied page.
             print "Permission denied";
@@ -101,8 +97,8 @@ class ChapterController extends Controller {
         if ($this->hasPermission($lecture_id)) {
             DB::transaction(function() use ($survey_to_remove_array) {
                 for ($x = 0; $x < sizeof($survey_to_remove_array); $x++) {
-                    DB::table('survey')->where(['id' => $survey_to_remove_array[$x]])->delete();
-                    DB::table('questions')->where(['survey_id' => $survey_to_remove_array[$x]])->delete();
+                    SurveyModel::where(['id' => $survey_to_remove_array[$x]])->delete();
+                    Question::where(['survey_id' => $survey_to_remove_array[$x]])->delete();
                 }
             });
         } else {

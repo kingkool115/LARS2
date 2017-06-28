@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\ChapterModel;
+use App\LectureModel;
+use App\SurveyModel;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -36,11 +39,10 @@ class Controller extends BaseController
      * @return bool             true if constellation of the parameters in url exists, else false.
      */
     function checkLectureDependencies($lecture_id, $chapter_id, $survey_id) {
-        $chapter_exists = DB::table('chapter')->where(['lecture_id' => $lecture_id])->get()->count() > 0;
-        $survey_exists = DB::table('survey')->where(['chapter_id' => $chapter_id])->get()->count() > 0;
-        $question_exists = DB::table('questions')
-                ->where(['survey_id' => $survey_id])->get()->count() > 0;
-        if ($chapter_exists && $survey_exists && $question_exists) {
+        $lecture_exists = LectureModel::where(['id' => $lecture_id])->count() > 0;
+        $chapter_exists = ChapterModel::where(['id' => $chapter_id])->count() > 0;
+        $survey_exists = SurveyModel::where(['id' => $survey_id])->count() > 0;
+        if ($lecture_exists && $chapter_exists && $survey_exists) {
             return true;
         }
         return false;

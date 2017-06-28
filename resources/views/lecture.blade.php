@@ -51,7 +51,7 @@
     @if (Auth::guest())
         @yield('content')
     @else
-        <div id="topic">{{$lecture['name']}}</div>
+        <div id="topic">{{$lecture->name}}</div>
 
         <table class="chapters_table">
             <tr id="very_first_table_row">
@@ -61,21 +61,19 @@
                     <button id="remove-button" type="submit" class="btn btn-primary" style="background-color: #a94442; display: none;" onclick="removeChapters();"> Remove </button>
                 </th>
             </tr>
-            @for ($x = 0; $x < 1; $x++)
-                <tr class="survey_table_content">
-                    <th></th>
-                    <th></th>
-                </tr>
-            @endfor
-            @foreach($result as $chapter)
+            <tr class="survey_table_content">
+                <th></th>
+                <th></th>
+            </tr>
+            @foreach($all_chapters as $chapter)
                 <tr class="survey_table_content">
                     <th>
-                        <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter['id']])}}">
-                            {{ $chapter['name']}}
+                        <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter->id])}}">
+                            {{ $chapter->name}}
                         </a>
                     </th>
                     <th class="remove-checkboxes">
-                        <input id="chapter_to_remove_{{$chapter['id']}}" autocomplete="off" type="checkbox" name="chapter-to-remove" onchange="displayHideRemoveButton();">
+                        <input id="chapter_to_remove_{{$chapter->id}}" autocomplete="off" type="checkbox" name="chapter-to-remove" onchange="displayHideRemoveButton();">
                     </th>
                 </tr>
             @endforeach

@@ -7,6 +7,10 @@ h2{
 body{
     background-color: #f5f8fa;
 }
+
+.remove_icon {
+    margin-left: 15px;
+}
 /* CSS for image popup in edit question view */
 
 .file-upload-area{

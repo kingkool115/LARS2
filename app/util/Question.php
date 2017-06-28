@@ -6,7 +6,7 @@
  * Time: 16:35
  */
 
-namespace App;
+namespace App\util;
 
 
 class Question
@@ -28,7 +28,7 @@ class Question
     private $slide_number;
 
     /**
-     * Question constructor.
+     * QuestionModel constructor.
      * @param $id                       id of this question in DB.
      * @param $survey_id                survey_id this question belongs to.
      * @param $question                 the question itself as text.

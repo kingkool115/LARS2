@@ -52,36 +52,31 @@
         @yield('content')
     @else
         <div id="topic">
-            <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id])}}">Chapter {{$chapter_name['name']}}</a><br>
-            {{$survey['name']}}
+            <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id])}}">Chapter {{$chapter->name}}</a><br>
+            {{$survey->name}}
         </div>
 
         <table class="questions_table">
             <tr id="very_first_table_row">
                 <th id="question_column">Question</th>
-                <th>Slide Number</th>
                 <th>
                     <div id="remove-label">Remove</div>
                     <button id="remove-button" type="submit" class="btn btn-primary" style="background-color: #a94442; display: none;" onclick="removeQuestions();"> Remove </button>
                 </th>
             </tr>
-        @for ($x = 0; $x < 1; $x++)
             <tr class="survey_table_content">
-                <th></th>
                 <th></th>
                 <th></th>
             </tr>
-        @endfor
-        @foreach($result as $question)
+        @foreach($all_questions as $question)
             <tr class="survey_table_content">
                 <th>
-                    <a href="{{route('question', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $question['survey_id'], 'slide_number' => $question['slide_number']])}}">
-                        {{ $question['question']}}
+                    <a href="{{route('question', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $question->survey_id, 'question_id' => $question->id])}}">
+                        {{ $question->question}}
                     </a>
                 </th>
-                <th class="slide_numbers">{{ $question['slide_number'] }}</th>
                 <th class="remove-checkboxes">
-                    <input id="slide_to_remove_{{$question['slide_number']}}" autocomplete="off" type="checkbox" name="question-to-remove" onchange="displayHideRemoveButton();">
+                    <input id="question_to_remove_{{$question->id}}" autocomplete="off" type="checkbox" name="question-to-remove" onchange="displayHideRemoveButton();">
                 </th>
             </tr>
         @endforeach
@@ -89,40 +84,19 @@
 
             <table id="textfield-new-slide">
                 <tr>
-                    <th><input type="text" name="new_slide_number" placeholder="slide number"></th>
                     <th>
-                        <button type="submit" class="btn btn-primary" onclick="createNewSlide()">Create question</button>
+                        <button type="submit" class="btn btn-primary" onclick="createNewQuestion()">Create question</button>
                     </th>
                 </tr>
             </table>
-                <div id="error-message"></div>
             <script>
 
                 /**
                  * This function is called when Create-Button is clicked and will redirect you to editQuestion-view.
-                 * It throws an error message when input is not an positive integer.
-                 * It throws an error message when you want to create a slide number that already exists.
                  */
-                function createNewSlide() {
-                    var new_slide_number = document.getElementsByName("new_slide_number")[0].value;
-                    var url_check_if_slide_number_exists = "{{route('slide_number_exists', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => 'new_slide_number'])}}";
-                    url_check_if_slide_number_exists = url_check_if_slide_number_exists.replace('new_slide_number', new_slide_number);
-                    $.getJSON( url_check_if_slide_number_exists, function( data ) {
-                        if (!Number.isInteger(parseInt(new_slide_number))) {
-                            document.getElementById("error-message").innerHTML = "'" + new_slide_number + "' is not a number.";
-                            document.getElementById("error-message").display = display;
-                        }
-                        else if (data['slideNumberExists']) {
-                            document.getElementById("error-message").innerHTML = "slide number " + new_slide_number + " already exists for this survey.";
-                            document.getElementById("error-message").display = display;
-                            //window.alert("slide number " + new_slide_number + " already exists for this survey.");
-                        } else {
-                            document.getElementById("error-message").innerHTML = "";
-                            var url = "{{route('question', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'slide_number' => 'new_slide_number'])}}";
-                            url = url.replace('new_slide_number', new_slide_number);
-                            window.location.href = url;
-                        }
-                    });
+                function createNewQuestion() {
+                    var url = "{{route('question', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id, 'question_id' => 0])}}";
+                    window.location.href = url;
                 }
 
                 /**
@@ -150,19 +124,19 @@
                  */
                 function removeQuestions() {
                     var all_checkboxes = document.getElementsByName('question-to-remove');
-                    var slides_to_remove = "";
+                    var questions_to_remove = "";
                     for (x = 0; x < all_checkboxes.length; x++) {
                         if (all_checkboxes[x].checked) {
                             var checkbox_id = all_checkboxes[x].id;
-                            var slide_number = checkbox_id.split("slide_to_remove_")[1];
-                            slides_to_remove += slide_number + '_';
+                            var slide_number = checkbox_id.split("question_to_remove_")[1];
+                            questions_to_remove += slide_number + '_';
                         }
                     }
                     // remove last underline character
-                    slides_to_remove = slides_to_remove.slice(0, -1);
+                    questions_to_remove = questions_to_remove.slice(0, -1);
                     var url = '{{route('remove_questions', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id])}}';
                     // put slides_to_remove as parameter into the url
-                    window.location.href = url + "?slides_to_remove=" + slides_to_remove;
+                    window.location.href = url + "?questions_to_remove=" + questions_to_remove;
                 }
             </script>
         @endif

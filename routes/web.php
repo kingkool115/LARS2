@@ -11,6 +11,7 @@
 |
 */
 
+use App\LectureModel;
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -24,7 +25,7 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}', 'ApiController@switchSlide');
+Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'ApiController@switchSlide');
 
 Route::get('/home', 'HomeController@index')
     ->name('home');
@@ -51,17 +52,17 @@ Route::get('lecture/{lecture_name}', 'MainController@createNewLecture')
 Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}', 'SurveyController@showQuestions')
     ->name('survey');
 
-// check if a slide number for a certain survey already exists.
-Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number_exists/{slide_number}', 'SurveyController@slideNumberExists')
-    ->name('slide_number_exists');
-
 // remove one or more questions from a survey
 Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/remove_slides/', 'SurveyController@removeQuestions')
     ->name('remove_questions');
 
 // edit a question
-Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}', 'QuestionController@editQuestion')
+Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'QuestionController@editQuestion')
     ->name('question');
+
+// edit a question
+Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_new_question', 'QuestionController@createNewQuestion')
+    ->name('create_new_question');
 
 // show all chapters of a lecture
 Route::get('lecture/{lecture_id}/chapters/', 'LectureController@showChapters')
@@ -88,11 +89,11 @@ Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey_name/{survey_name}'
     ->name('create_survey');
 
 // post a text response question
-Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}/create_text_response_question', 'QuestionController@postTextResponseQuestion')
+Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_text_response_question', 'QuestionController@postTextResponseQuestion')
     ->name('postTextResponseQuestion');
 
 // post a multiple choice question
-Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/slide_number/{slide_number}/create_multiple_choice_question', 'QuestionController@postMultipleChoiceQuestion')
+Route::post('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_multiple_choice_question', 'QuestionController@postMultipleChoiceQuestion')
     ->name('postMultipleChoiceQuestion');
 
 // show create survey form
@@ -113,9 +114,16 @@ Route::post('create_new_survey/existing_chapter/{lecture_id}/{chapter_id}', 'Cre
 
 
 // API
-
-// Get all lectures of user
-Route::get('/api/lectures', 'ApiController@getAllLectures');
+/**
+ * Handles route /api/lectures.
+ * Returns all existing lectures.
+ *
+ * @return lectures in json format.
+ */
+Route::get('/api/lectures', function () {
+    $lectures = LectureModel::all();
+    return response()->json($lectures);
+});
 
 // Get all Chapters of a certain lecture
 Route::get('/api/lecture/{lecture_id}/chapters', 'ApiController@getAllChaptersOfLecture');
@@ -126,5 +134,5 @@ Route::get('/api/lecture/{lecture_id}/chapter/{chapter_id}/surveys', 'ApiControl
 // TODO: call an url to start a survey session
 
 // Push a question to device, when this url is called.
-Route::get('/api/push/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question_to_slide_number/{slide_number}',
+Route::get('/api/push/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}',
     'ApiController@pushQuestion');

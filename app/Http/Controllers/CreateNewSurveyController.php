@@ -7,11 +7,14 @@
  */
 
 namespace App\Http\Controllers;
+
+use App\ChapterModel;
+use App\LectureModel;
+use App\SurveyModel;
+use App\util\Chapter;
+use App\util\Survey;
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
-use App\Chapter;
-use App\Lecture;
-use App\Survey;
 use Illuminate\Support\Facades\DB;
 
 
@@ -45,12 +48,13 @@ class CreateNewSurveyController extends Controller
         if ($this->isAuthenticated()) {
             //$surveys = DB::select($this->select_all_surveys_of_prof);
             //
-            $all_lectures = DB::table('lecture')->select('id', 'name')->get();
-            $all_chapters = DB::table('chapter')->select('id', 'name', 'lecture_id')->get();
-            $all_surveys = DB::table('survey')->select('id', 'name', 'chapter_id')->get();
+            $all_lectures = LectureModel::all();
+            $all_chapters = ChapterModel::all();
+            $all_surveys = SurveyModel::all();
 
             // a list with objects of type lecture.
             $result = [];
+            $result_chapters = [];
 
             // iterate through all surveys of DB
             for ($x = 0; $x < sizeof($all_surveys); $x++) {
@@ -96,7 +100,7 @@ class CreateNewSurveyController extends Controller
                                 // if lecture does not exists in our result list -> create a new lecture and add it to result list.
                                 $result_surveys = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
                                 $result_chapters = new Chapter($chapter['id'], $chapter['name'], $result_surveys);
-                                $result_lectures = new lecture($lecture['id'], $lecture['name'], $result_chapters);
+                                $result_lectures = new Lecture($lecture['id'], $lecture['name'], $result_chapters);
                                 $result[] = $result_lectures;
                                 break;
                             }

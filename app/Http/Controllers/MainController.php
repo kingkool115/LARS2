@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Chapter;
-use App\Lecture;
-use App\Survey;
+use App\util\Chapter;
+use App\util\Lecture;
+use App\ChapterModel;
+use App\LectureModel;
+use App\util\Survey;
+use App\SurveyModel;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\Debugbar\Facade as Debugbar;
 use \Illuminate\Support\Facades\Auth;
@@ -48,48 +51,45 @@ class MainController extends Controller
     {
         $user = Auth::user();
 
-        $all_lectures = DB::table('lecture')->select('id', 'name')->where(['user_id' => $user['id']])->get();
-        $all_chapters = DB::table('chapter')->select('id', 'name', 'lecture_id')->get();
-        $all_surveys = DB::table('survey')->select('id', 'name', 'chapter_id')->get();
+        $all_lectures = LectureModel::where(['user_id' => $user['id']])->get();
+        $all_chapters = ChapterModel::all();
+        $all_surveys = SurveyModel::all();
 
         // a list with objects of type lecture.
         $result = [];
 
         // iterate through all surveys of DB
-        for ($x = 0; $x < sizeof($all_surveys); $x++) {
-            $survey = (array)$all_surveys[$x];
-
+        foreach ($all_surveys as $survey) {
+            print_r($survey);
             // iterate through all chapters of DB
-            for ($y = 0; $y < sizeof($all_chapters); $y++) {
-                $chapter = (array)$all_chapters[$y];
+            foreach ($all_chapters as $chapter) {
 
                 // if survey belongs to chapter
-                if ($survey['chapter_id'] == $chapter['id']) {
+                if ($survey->chapter_id== $chapter->id) {
 
                     // iterate through all lectures of DB
-                    for ($z = 0; $z < sizeof($all_lectures); $z++) {
-                        $lecture = (array)$all_lectures[$z];
+                    foreach ($all_lectures as $lecture) {
 
                         // if chapter belongs to lecture of DB.
-                        if ($chapter['lecture_id'] == $lecture['id']) {
+                        if ($chapter->lecture_id == $lecture->id) {
 
                             // iterate through $result
                             foreach ($result as $lecture_of_results) {
 
                                 // if lecture already exists in our result list, then just
-                                if ($lecture_of_results->getId() == $lecture['id']) {
+                                if ($lecture_of_results->getId() == $lecture->id) {
 
                                     // if chapter already exists -> only a new survey has to be added to the chapter.
-                                    if ($lecture_of_results->check_if_chapter_exists($chapter['id'])) {
-                                        $result_survey = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
-                                        $lecture_of_results->getChapterById($chapter['id'])->addSurvey($result_survey);
+                                    if ($lecture_of_results->check_if_chapter_exists($chapter->id)) {
+                                        $result_survey = new Survey($survey->id, $survey->name, $chapter->id, null);
+                                        $lecture_of_results->getChapterById($chapter->id)->addSurvey($result_survey);
                                         break 2;    // break 2 loops -> continue with nex survey of $all_surveys
 
                                     // if chapter does not exist in this lecture -> create new chapter with survey and
                                     // add it to existing lecture in result list.
                                     } else {
-                                        $result_survey = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
-                                        $result_chapter = new Chapter($chapter['id'], $chapter['name'], $result_survey);
+                                        $result_survey = new Survey($survey->id, $survey->name, $chapter->id, null);
+                                        $result_chapter = new Chapter($chapter->id, $chapter->name, $result_survey);
                                         $lecture_of_results->addChapter($result_chapter);
                                         break 2;    // break 2 loops -> continue with nex survey of $all_surveys
                                     }
@@ -97,9 +97,9 @@ class MainController extends Controller
                             }
 
                             // if lecture does not exists in our result list -> create a new lecture and add it to result list.
-                            $result_survey = new Survey($survey['id'], $survey['name'], $chapter['id'], null);
-                            $result_chapter = new Chapter($chapter['id'], $chapter['name'], $result_survey);
-                            $result_lecture = new lecture($lecture['id'], $lecture['name'], $result_chapter);
+                            $result_survey = new Survey($survey->id, $survey->name, $chapter->id, null);
+                            $result_chapter = new Chapter($chapter->id, $chapter->name, $result_survey);
+                            $result_lecture = new Lecture($lecture->id, $lecture->name, $result_chapter);
                             $result[] = $result_lecture;
                             break;
                         }
@@ -115,7 +115,7 @@ class MainController extends Controller
     /**
      * This function creates a new chapter entry into DB.
      *
-     * @param $lecture_name chapter title of the chapter the user wants to create.
+     * @param $lecture_name Lecture title of the chapter the user wants to create.
      * @return redirect to new created chapter view.
      */
     public function createNewLecture($lecture_name) {
