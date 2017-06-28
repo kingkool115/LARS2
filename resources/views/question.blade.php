@@ -1,51 +1,6 @@
-<!DOCTYPE html>
-<html lang="de" class="no-js">
-<head>
+@extends('user_dashboard')
 
-    <meta charset="utf-8">
-
-    <meta name="language" content="de">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/css.css') }}" rel="stylesheet">
-
-    <title>LARS - Home </title>
-    <meta name="title" content="LARS - Universität Ulm" />
-    <meta name="date" content="2017-04-24" />
-</head>
-
-<body>
-
-<header>
-
-    <span>
-        <h2>
-            LARS - Laravel Audience Response System
-            <img id="uni_logo" src="/storage/logo-uni-ulm.svg">
-        </h2>
-    </span>
-    <div class="topnav">
-        @if (!Auth::guest())
-            <a class="left-header-buttons" href="{{ route('lectures') }}">My Lectures</a>
-            <a href="{{route('show_create_survey_form')}}">Create new survey</a>
-            <!-- Handle Logout Button -->
-            <a id="logout_button" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                Logout
-            </a>
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                {{ csrf_field() }}
-            </form>
-            <div id="logged_in_as">Angemeldet als: {{ Auth::user()->name }}</div>
-        @endif
-    </div>
-</header>
-
+@section('dashboard_content')
 <main>
     @if (Auth::guest())
         @yield('content')
@@ -438,6 +393,4 @@
 
     @endif
 </main>
-
-</body>
-</html>
+@endsection
