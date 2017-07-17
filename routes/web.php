@@ -117,3 +117,15 @@ Route::post('create_new_survey/existing_chapter/{lecture_id}/{chapter_id}', 'Cre
 // Push a question to device, when this url is called.
 Route::get('/api/push/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}',
     'PushControllerController@pushQuestion');
+
+Route::get('subscribe', 'CommunicationInterfaceController@subscribe');
+
+Route::get('unsubscribe', 'CommunicationInterfaceController@unsubscribe');
+
+Route::get('start_presentation_session', 'CommunicationInterfaceController@startPresentationSession');
+
+Route::get('push_question', 'CommunicationInterfaceController@pushQuestion');
+
+Route::get('answer_question', 'CommunicationInterfaceController@answerQuestion');
+
+Route::get('evaluate_answers', 'CommunicationInterfaceController@evaluateAnswers');

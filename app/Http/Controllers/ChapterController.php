@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\ChapterModel;
 use App\LectureModel;
 use App\SurveyModel;
-use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
-use Barryvdh\Debugbar\Facade as Debugbar;
 
 
 class ChapterController extends Controller {
