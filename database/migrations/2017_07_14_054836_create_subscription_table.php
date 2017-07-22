@@ -14,6 +14,7 @@ class CreateSubscriptionTable extends Migration
     public function up()
     {
         Schema::create('subscription', function (Blueprint $table) {
+            $table->increments('id');
             $table->string('student_id')->unique();
             $table->integer('lecture_id');
             $table->timestamps();

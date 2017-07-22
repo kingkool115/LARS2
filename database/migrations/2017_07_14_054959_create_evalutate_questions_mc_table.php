@@ -15,6 +15,7 @@ class CreateEvalutateQuestionsMcTable extends Migration
     {
         //
         Schema::create('evaluate_questions_mc', function (Blueprint $table) {
+            $table->increments('id');
             $table->string('student_id');
             $table->integer('question_id');
             $table->string('session_id');

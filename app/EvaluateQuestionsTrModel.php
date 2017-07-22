@@ -7,6 +7,7 @@
  */
 
 namespace App;
+use Illuminate\Database\Eloquent\Model;
 
 
 class EvaluateQuestionsTrModel extends Model

@@ -14,6 +14,7 @@ class CreateEvalutateQuestionsTrTable extends Migration
     public function up()
     {
         Schema::create('evaluate_questions_tr', function (Blueprint $table) {
+            $table->increments('id');
             $table->string('student_id');
             $table->integer('question_id');
             $table->string('session_id');

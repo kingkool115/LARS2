@@ -14,10 +14,10 @@ class CreatePushedQuestionTable extends Migration
     public function up()
     {
         Schema::create('pushed_question', function (Blueprint $table) {
+            $table->increments('id');
             $table->integer('question_id');
             $table->string('session_id');
             $table->integer('lecture_id');
-            $table->boolean('pushed')->default(0);
             $table->timestamps();
         });
     }

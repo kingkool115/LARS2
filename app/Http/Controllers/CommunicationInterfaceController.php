@@ -197,7 +197,7 @@ class CommunicationInterfaceController extends Controller {
             return response('The question you want to push does not exist.', 404);
         }
 
-        if (PushedQuestionModel::where(['pushed' => true])->count() > 0) {
+        if (PushedQuestionModel::where(['question_id' => $question_id, 'session_id' => $session_id])->count() > 0) {
             return response('Question was already pushed for this session', 409);
         }
 
@@ -243,7 +243,6 @@ class CommunicationInterfaceController extends Controller {
             $pushed_question_model->lecture_id = $lecture_id;
             $pushed_question_model->session_id = $session_id;
             $pushed_question_model->question_id = $question_id;
-            $pushed_question_model->pushed = true;
             $pushed_question_model->save();
 
 
@@ -322,32 +321,44 @@ class CommunicationInterfaceController extends Controller {
      * Handles route /answer_question
      * -> encrypted json request for multiple choice answer
      * {
-     *      "student_id": "456",
-     *      "session_id": "785",
-     *      "question_id": "9",
+     *      "lecture_id": "1",
+     *      "student_id": "321",
+     *      "session_id": "457dfs7s6dr",
+     *      "question_id": "6",
      *      "is_text_response": "false",
-     *      "answers": "[2, 4, 8]"
+     *      "answer_ids": "6"
      * }
      *
      * -> encrypted json request for text response answer
      * {
-     *      "student_id": "456",
-     *      "session_id": "785",
-     *      "question_id": "9",
+     *      "lecture_id": "1",
+     *      "student_id": "321",
+     *      "session_id": "457dfs7s6dr",
+     *      "question_id": "1",
      *      "is_text_response": "true",
-     *      "answers": "richtig .."
+     *      "answer": "richtig .."
      * }
      *
      * Receive answer from student.
      */
     public function answerQuestion(){
-        // TODO: check if student did even subscribed
-        // TODO: decrypt student_id from json content
+        $lecture_id = request()->input("lecture_id");
         $student_id = request()->input("student_id");
         $session_id = request()->input('session_id');
         $question_id = request()->input("question_id");
         $is_text_response = request()->input("is_text_response");
-        $answer = request()->input("answer");
+
+        if (!$this->studentSubscribed($student_id, $lecture_id)) {
+            return response("You are not allowed to answer this question", 403);
+        }
+
+        if (PushedQuestionModel::where(['question_id' => $question_id, 'session_id' => $session_id])->count() == 0) {
+            return resonse("There is no pushed question for your given answer.", 404);
+        }
+
+        if (PresentationSessionModel::where(['id' => $session_id, 'active' => false])->count() == 1) {
+            return response("Session for this question is already closed.", 200);
+        }
 
         if (request()->isJson() && $this->sessionExistsAndActive($session_id)) {
             if ($is_text_response) {
@@ -355,19 +366,19 @@ class CommunicationInterfaceController extends Controller {
                 $evaluate_questions_model_tr = new EvaluateQuestionsTrModel();
                 $evaluate_questions_model_tr->student_id = $student_id;
                 $evaluate_questions_model_tr->session_id = $session_id;
-                $evaluate_questions_model_tr->quesion_id = $question_id;
-                $evaluate_questions_model_tr->answer = $answer;
+                $evaluate_questions_model_tr->question_id = $question_id;
+                $evaluate_questions_model_tr->answer = request()->input("answer");
                 $evaluate_questions_model_tr->save();
             } else {
                 // insert into evaluate_questions_mc table
                 $evaluate_questions_model_mc = new EvaluateQuestionsMcModel();
                 $evaluate_questions_model_mc->student_id = $student_id;
                 $evaluate_questions_model_mc->session_id = $session_id;
-                $evaluate_questions_model_mc->quesion_id = $question_id;
-
-                // TODO: $evaluate_questions_model_mc->answer_ids
+                $evaluate_questions_model_mc->question_id = $question_id;
+                $evaluate_questions_model_mc->answer_ids = request()->input("answer_ids");
                 $evaluate_questions_model_mc->save();
             }
+            return response("Answer sent.", 200);
         }
     }
 
@@ -375,8 +386,8 @@ class CommunicationInterfaceController extends Controller {
      * Handles route /evaluate_answers
      * -> encrypted json request
      * {
-     *      session_id: 785,
-     *      question_ids: [9,8,6], (3 questions are evaluated on this slide)
+     *      "session_id": "457dfs7s6dr",
+     *      "question_id": [6,1]
      * }
      *
      * ->encrypted json response
@@ -385,7 +396,12 @@ class CommunicationInterfaceController extends Controller {
      *          {
                     "question_id": 4,
      *              "is_text_response": true,
-     *              "answers": ["answer1", "answer2", "answer3"]
+     *              "answers":
+     *                  [
+     *                      "answer1": 3,
+     *                      "answer2": 6,
+     *                      "answer3": 4
+     *                  ]
      *          },
      *          {
                     "question_id": 5,
@@ -403,20 +419,26 @@ class CommunicationInterfaceController extends Controller {
     public function evaluateAnswers() {
 
         $session_id = request()->input('session_id');
-        $question_ids = request()->input("question_id");
+        $question_ids = request()->input("question_ids");
         $result = array();
 
         if (request()->isJson() && $this->sessionExistsAndActive($session_id)) {
 
             // iterate through all given question_ids
             foreach ($question_ids as $question_id) {
+
+                if (PushedQuestionModel::where(['question_id' => $question_id, 'session_id' => $session_id])->count() == 0) {
+                    return resonse("Question id not found in pushed questions for this session.", 404);
+                }
+
                 // iterate mc questions
-                $answers = AnswerModel::where(['question_id' => $question_id])->all()->array();
+                $answers = AnswerModel::where(['question_id' => $question_id])->get();
                 $question_eval = [];
+                $question_eval['question_id'] = $question_id;
 
                 // it's a text response question
-                if ($answers->count() == 1 && $answers[0]->is_correct) {
-                    $eval_tr_answers = EvaluateQuestionsTrModel::where(['question_id' => $question_id, "session_id" => $session_id])->all();
+                if ($answers->count() == 1 && $answers->first()->is_correct) {
+                    $eval_tr_answers = EvaluateQuestionsTrModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
                     $answers_for_this_question = [];
 
                     // iterate answers from evaluation table
@@ -424,23 +446,24 @@ class CommunicationInterfaceController extends Controller {
 
                         // iterate already collected answers
                         foreach ($answers_for_this_question as $key => $value) {
-
                             // this answer already exists in collected answers -> increment counter
-                            if ($tr_answer == $key) {
-                                $answers_for_this_question[$tr_answer] += 1;
+                            if ($tr_answer->answer == $key) {
+                                $answers_for_this_question[$tr_answer->answer] += 1;
                             }
                         }
 
                         // if answer was not found in already collected answers -> make a new entry with counter = 1
-                        if (!isset($answers_for_this_question[$tr_answer])) {
-                            $answers_for_this_question[$tr_answer] = 1;
+                        if (!isset($answers_for_this_question[$tr_answer->answer])) {
+                            $answers_for_this_question[$tr_answer->answer] = 1;
                         }
                     }
+                    $question_eval['is_text_response'] = true;
+                    $question_eval['answers'] = $answers_for_this_question;
                 }
 
                 // it's a multiple choice question
                 if ($answers->count() > 1) {
-                    $eval_mc_answers = EvaluateQuestionsMcModel::where(['question_id' => $question_id, "session_id" => $session_id])->all();
+                    $eval_mc_answers = EvaluateQuestionsMcModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
                     $answers_for_this_question = [];
 
                     // fill answers for this question with all possible answers and set their counter to zero
@@ -451,7 +474,6 @@ class CommunicationInterfaceController extends Controller {
                     // iterate all multiple choice answers from each student
                     foreach ($eval_mc_answers as $mc_answer) {
                         $mc_ids = explode(',', $mc_answer->answer_ids);
-
                         // iterate all given answer ids of the student for this question
                         foreach ($mc_ids as $id) {
 
@@ -465,18 +487,15 @@ class CommunicationInterfaceController extends Controller {
                             }
                         }
                     }
+                    $question_eval['is_text_response'] = false;
+                    $question_eval['answers'] = $answers_for_this_question;
                 }
-
-                // create an entry for one of the requested questions
-                $question_eval['question_id'] = $question_id;
-                $question_eval['is_text_response'] = true;
-                $question_eval['answers'] = $answers_for_this_question;
 
                 // add to result
                 $result[] = $question_eval;
             }
 
-            return $result()->json($result);
+            return response()->json($result);
         }
     }
 }
