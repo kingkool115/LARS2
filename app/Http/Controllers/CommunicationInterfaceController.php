@@ -420,21 +420,25 @@ class CommunicationInterfaceController extends Controller {
 
         $session_id = request()->input('session_id');
         $question_ids = request()->input("question_ids");
+        if (isset($question_ids)) {
+            $question_ids = explode(',', $question_ids);
+        }
         $result = array();
 
         if (request()->isJson() && $this->sessionExistsAndActive($session_id)) {
-
             // iterate through all given question_ids
             foreach ($question_ids as $question_id) {
 
                 if (PushedQuestionModel::where(['question_id' => $question_id, 'session_id' => $session_id])->count() == 0) {
-                    return resonse("Question id not found in pushed questions for this session.", 404);
+                    continue;
                 }
 
                 // iterate mc questions
                 $answers = AnswerModel::where(['question_id' => $question_id])->get();
                 $question_eval = [];
                 $question_eval['question_id'] = $question_id;
+                $question = QuestionModel::where(['id' => $question_id])->first();
+                $question_eval['question'] = $question->question;
 
                 // it's a text response question
                 if ($answers->count() == 1 && $answers->first()->is_correct) {

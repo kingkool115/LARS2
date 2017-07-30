@@ -27,7 +27,7 @@ class SurveyController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth.basic');
     }
 
 
@@ -60,6 +60,12 @@ class SurveyController extends Controller
                 $all_questions = QuestionModel::where(['survey_id' => $survey_id])->orderBy('created_at')->get();
                 $survey = SurveyModel::where('id', $survey_id)->first();
                 $chapter = ChapterModel::where('id', $chapter_id)->first();
+
+                // Accept: application/json
+                if (request()->wantsJson()) {
+                    return response()->json($all_questions);
+                }
+
                 return view('survey', compact('all_questions', 'survey', 'chapter', 'lecture_id', 'chapter_id', 'survey_id'));
             } else {
                 // TODO: survey does not exist page.
