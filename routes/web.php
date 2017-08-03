@@ -33,6 +33,8 @@ Route::get('/lectures', 'MainController@show_lectures')
 Route::get('/overview', 'MainController@show_overview')
     ->name('overview');
 
+Route::get('/public_image/{filename}', 'Controller@getPublicImage')->name('public_image');
+
 Route::post('/logout', 'Auth\LoginController@logout')
     ->name('logout');
 

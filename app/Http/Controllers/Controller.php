@@ -9,6 +9,8 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Response;
 
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,5 +48,10 @@ class Controller extends BaseController
             return true;
         }
         return false;
+    }
+
+    public function getPublicImage($filename) {
+        $file = Storage::disk('public')->get($filename);
+        return (new Response($file, 200))->header('Content-Type', 'image');
     }
 }

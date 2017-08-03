@@ -28,7 +28,7 @@
     <span>
         <h2>
             LARS - Laravel Audience Response System
-            <img id="uni_logo" src="/storage/app/logo-uni-ulm.svg">
+            <img id="uni_logo" src="{{route('public_image', ['filename' => 'logo-uni-ulm.svg'])}}">
         </h2>
     </span>
     <div class="topnav">

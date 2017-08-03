@@ -50,8 +50,8 @@
             <div class="file-upload-area">
                 <span id="actual-image-text-response"> Actual Image: </span>
                 @if(isset($question) && $question->image_path)
-                    @if($question->is_text_respone)
-                        <img id="display-image-text_response" width="300" height="200" onerror="this.style.visibility='hidden'"
+                    @if($question->is_text_response)
+                        <img id="display-image-text-response" width="300" height="200" onerror="this.style.visibility='hidden'"
                              src="{{route('question_image',  ['lecture_id' => $lecture_id, 'filename' => $question->image_path])}}" ><br><br>
                     @else
                         <img id="display-image-text-response" width="300" height="200" onerror="this.style.visibility='hidden'"
@@ -132,7 +132,7 @@
                             <label id="correct_answer_{{$x}}" for="correct_answer">Answer {{$x}}</label>
                             <div style="float: right">
                                 <input type="checkbox" name="is_answer_correct_{{$x}}" id="correct_answer_checkbox_{{$x}}" > correct
-                                <input type="image" class="remove_icon" src="/storage/remove_icon.png" onclick="removeQuestion({{$x + 1}}); return false;" />
+                                <input type="image" class="remove_icon" src="{{route('public_image', ['filename' => 'remove_icon.png'])}}" onclick="removeQuestion({{$x + 1}}); return false;" />
                             </div>
                             <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x}}" id="possible_answer_{{$x}}"></textarea>
                             <br>
@@ -149,7 +149,7 @@
                                 @else
                                     <input type="checkbox" name="is_answer_correct_{{$x + 1}}" id="correct_answer_checkbox_{{$x + 1}}" > correct
                                 @endif
-                                    <input type="image" class="remove_icon" src="/storage/remove_icon.png" onclick="removeQuestion({{$x + 1}}); return false;"/>
+                                    <input type="image" class="remove_icon" src="{{route('public_image', ['filename' => 'remove_icon.png'])}}" onclick="removeQuestion({{$x + 1}}); return false;"/>
                             </div>
                             <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x + 1}}" id="possible_answer_{{$x + 1}}"
                             >@if (isset($question->id) && !$question->is_text_response){{$answer->answer}}@endif</textarea>
@@ -195,7 +195,6 @@
         @else
             var img = document.getElementById('display-image-multiple-choice');
         @endif
-
         var modalImg = document.getElementById("img01");
         var captionText = document.getElementById("caption");
         img.onclick = function(){
@@ -248,7 +247,7 @@
             var removeButton = document.createElement("input");
             removeButton.type = "image";
             removeButton.className = "remove_icon";
-            removeButton.src = "/storage/remove_icon.png";
+            removeButton.src = "{{route('public_image', ['filename' => 'remove_icon.png'])}}";
             removeButton.addEventListener('click', function() {
                 removeQuestion(newAnswerIndex);
             }, false);

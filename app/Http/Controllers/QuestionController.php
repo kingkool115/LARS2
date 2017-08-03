@@ -79,7 +79,7 @@ class QuestionController extends Controller
 
                 $question = QuestionModel::where(['survey_id' => $survey_id, "id" => $question_id])->first();
                 $answers = AnswerModel::where(['question_id' => $question_id])->get();
-                return view('question', compact( 'question', 'answers', 'one_answer', 'survey', 'lecture_id', 'chapter_id', 'survey_id'));
+                return view('question', compact( 'question', 'answers', 'survey', 'lecture_id', 'chapter_id', 'survey_id'));
             } else {
                 return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
             }
@@ -183,7 +183,7 @@ class QuestionController extends Controller
      * Return saved image to current question.
      *
      * @param $lecture_id to check permission.
-     * @param filename in local storage
+     * @param $filename in local storage.
      * @return image.
      * */
     public function getImage($lecture_id, $filename) {
@@ -226,28 +226,22 @@ class QuestionController extends Controller
         if ($is_text_response) {
             $file = request()->file('question-image-text-response');
         } else {
-
             $file = request()->file('question-image-multiple-choice');
         }
 
 
         if ($file != null) {
+            // add file to app/question-images/
             $ext = $file->guessClientExtension();
-            // users/{user_id}/{survey_id}/{slide_number}/
-            // TODO: store them somewhere else
-            // this file path will be saved into DB
-            $user = Auth::user();
-            $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
-            // actually the file is stored in public/question-images ...
             Storage::disk('local')->put($file->getFilename().'.'.$ext,  File::get($file));
+
+            // create an entry into DB
             $entry = new FileEntryModel();
             $entry->mime = $file->getClientMimeType();
             $entry->original_filename = $file->getClientOriginalName();
             $entry->filename = $file->getFilename().'.'.$ext;
-
             $entry->save();
 
-            //$file->storeAs('public/' . $path,  $question->id . "." . $ext);
             $question->image_path = $entry->filename;
         } else {
             $question->image_path = null;
