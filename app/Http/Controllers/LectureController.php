@@ -71,6 +71,21 @@ class LectureController extends Controller
     }
 
     /**
+     * This function handles route /rename_lecture/lecture_id/{lecture_id}/rename/{new_lecture_name}
+     * It renames the lecture.
+     *
+     * @param $lecture_id the id of the lecture which should be renamed
+     * @param $new_lecture_name the new given lecture name.
+     * @return redirect to chapter overview of that lecture.s
+     * */
+    public function renameLecture($lecture_id, $new_lecture_name) {
+        if ($this->hasPermission($lecture_id)) {
+            LectureModel::where(["id" => $lecture_id])->update(["name" => $new_lecture_name]);
+            return redirect()->route('lecture', ['lecture_id' => $lecture_id]);
+        }
+    }
+
+    /**
      * This function creates a new chapter entry into DB.
      *
      * @param $lecture_id id of this lecture.

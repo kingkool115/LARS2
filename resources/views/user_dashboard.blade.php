@@ -28,12 +28,13 @@
     <span>
         <h2>
             LARS - Laravel Audience Response System
-            <img id="uni_logo" src="/storage/logo-uni-ulm.svg">
+            <img id="uni_logo" src="/storage/app/logo-uni-ulm.svg">
         </h2>
     </span>
     <div class="topnav">
         @if (!Auth::guest())
-            <a class="left-header-buttons" href="{{ route('lectures') }}">My Lectures</a>
+            <a class="left-header-buttons" href="{{ route('overview') }}">Overview</a>
+            <a href="{{ route('lectures') }}">My Lectures</a>
             <a href="{{route('show_create_survey_form')}}">Create new survey</a>
             <!-- Handle Logout Button -->
             <a id="logout_button" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

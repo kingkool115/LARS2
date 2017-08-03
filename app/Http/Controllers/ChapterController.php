@@ -65,6 +65,22 @@ class ChapterController extends Controller {
     }
 
     /**
+     * This function handles route /rename/lecture/{lecture_id}/chapter/{chapter_id}/rename/{new_chapter_name}
+     * It renames the lecture.
+     *
+     * @param $lecture_id the lecture the chapter belongs to.
+     * @param $chapter_id the id of the chapter which should be renamed.
+     * @param $new_chapter_name the new given chapter name.
+     * @return redirect to survey overview of that chapter.
+     * */
+    public function renameChapter($lecture_id, $chapter_id, $new_chapter_name) {
+        if ($this->hasPermission($lecture_id)) {
+            ChapterModel::where(["id" => $chapter_id])->update(["name" => $new_chapter_name]);
+            return redirect()->route('chapter', ['lecture_id' => $lecture_id, "chapter_id" => $chapter_id]);
+        }
+    }
+
+    /**
      * This function creates a new survey entry into DB.
      *
      * @param $lecture_id id of lecture this chapter belongs to.

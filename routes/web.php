@@ -27,11 +27,11 @@ Auth::routes();
 
 Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'PushControllerController@switchSlide');
 
-Route::get('/home', 'HomeController@index')
-    ->name('home');
-
 Route::get('/lectures', 'MainController@show_lectures')
     ->name('lectures');
+
+Route::get('/overview', 'MainController@show_overview')
+    ->name('overview');
 
 Route::post('/logout', 'Auth\LoginController@logout')
     ->name('logout');
@@ -48,6 +48,18 @@ Route::get('lecture/remove_lectures/', 'MainController@removeLectures')
 Route::get('lecture/{lecture_name}', 'MainController@createNewLecture')
     ->name('create_lecture');
 
+// rename lecture
+Route::get('rename/lecture/{lecture_id}/rename/{new_lecture_name}', 'LectureController@renameLecture')
+    ->name('rename_lecture');
+
+// rename chapter
+Route::get('rename/lecture/{lecture_id}/chapter/{chapter_id}/rename/{new_chapter_name}', 'ChapterController@renameChapter')
+    ->name('rename_chapter');
+
+// rename survey
+Route::get('rename/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/rename/{new_survey_name}', 'SurveyController@renameSurvey')
+    ->name('rename_survey');
+
 // show questions of an survey
 Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}', 'SurveyController@showQuestions')
     ->name('survey');
@@ -63,6 +75,10 @@ Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/questio
 // edit a question
 Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_new_question', 'QuestionController@createNewQuestion')
     ->name('create_new_question');
+
+//get image of question
+Route::get('question_image/lecture/{lecture_id}/file/{filename}', 'QuestionController@getImage')
+    ->name('question_image');
 
 // show all chapters of a lecture
 Route::get('lecture/{lecture_id}/chapters/', 'LectureController@showChapters')

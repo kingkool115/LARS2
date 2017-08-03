@@ -5,7 +5,11 @@
     @if (Auth::guest())
         @yield('content')
     @else
-        <div id="topic">{{$lecture->name}}</div>
+        <div id="topic">
+            <button id="edit_lecture_button" type="submit" class="btn btn-primary" onclick="switchEditMode();">Rename</button>
+            <span id="lecture_name_label">{{$lecture->name}}</span>
+            <span><input id="lecture_name_edit" type="text" value="{{$lecture->name}}" style="display: none"></span>
+        </div>
 
         <table class="chapters_table">
             <tr id="very_first_table_row">
@@ -95,6 +99,29 @@
         var url = '{{route('remove_chapters', ['lecture_id' => $lecture_id])}}';
         // put slides_to_remove as parameter into the url
         window.location.href = url + "?chapters_to_remove=" + chapters_to_remove;
+    }
+
+    /**
+     * Edit Button is clicked.
+     **/
+    function switchEditMode() {
+        var lecture_name_label = document.getElementById('lecture_name_label');
+        var lecture_name_edit = document.getElementById('lecture_name_edit');
+        var edit_lecture_button = document.getElementById('edit_lecture_button');
+
+        if (lecture_name_label.style.display == 'none') {
+            lecture_name_label.style.display = 'inline'
+            lecture_name_edit.style.display = 'none';
+            edit_lecture_button.innerHTML = 'Edit'
+            var new_lecture_name = lecture_name_edit.value;
+            var url = '{{route('rename_lecture', ['lecture' => $lecture_id, 'new_lecture_name' => 'new_name'])}}';
+            url = url.replace('new_name', new_lecture_name);
+            window.location.href = url;
+        } else {
+            edit_lecture_button.innerHTML = 'Save'
+            lecture_name_label.style.display = 'none'
+            lecture_name_edit.style.display = 'inline';
+        }
     }
 </script>
 @endsection

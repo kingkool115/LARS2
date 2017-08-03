@@ -78,6 +78,23 @@ class SurveyController extends Controller
     }
 
     /**
+     * This function handles route /rename/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}rename/{new_survey_name}
+     * It renames the lecture.
+     *
+     * @param $lecture_id the lecture the chapter belongs to.
+     * @param $chapter_id the id of the chapter which should be renamed.
+     * @param $survey_id id of the survey.
+     * @param $new_survey_name the new given survey name.
+     * @return redirect to survey overview of that chapter.
+     * */
+    public function renameSurvey($lecture_id, $chapter_id, $survey_id, $new_survey_name) {
+        if ($this->hasPermission($lecture_id)) {
+            SurveyModel::where(["id" => $survey_id])->update(["name" => $new_survey_name]);
+            return redirect()->route('survey', ['lecture_id' => $lecture_id, "chapter_id" => $chapter_id, "survey_id" => $survey_id]);
+        }
+    }
+
+    /**
      * This function is called when user clicks Remove-Button in survey-view in order to remove questions.
      * Questions will be removed from DB and will be redirect to same page (survey-view).
      *

@@ -7,7 +7,9 @@
     @else
         <div id="topic">
             <a href="{{route('chapter', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id])}}">Chapter {{$chapter->name}}</a><br>
-            {{$survey->name}}
+            <button id="edit_survey_button" type="submit" class="btn btn-primary" onclick="switchEditMode();">Rename</button>
+            <span id="survey_name_label">{{$survey->name}}</span>
+            <span><input id="survey_name_edit" type="text" value="{{$survey->name}}" style="display: none"></span>
         </div>
 
         <table class="questions_table">
@@ -91,6 +93,31 @@
                     var url = '{{route('remove_questions', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id])}}';
                     // put slides_to_remove as parameter into the url
                     window.location.href = url + "?questions_to_remove=" + questions_to_remove;
+                }
+
+
+                /**
+                 * Edit Button is clicked.
+                 **/
+                function switchEditMode() {
+                    var survey_name_label = document.getElementById('survey_name_label');
+                    var survey_name_edit = document.getElementById('survey_name_edit');
+                    var edit_survey_button = document.getElementById('edit_survey_button');
+
+                    if (survey_name_label.style.display == 'none') {
+                        survey_name_label.style.display = 'inline'
+                        survey_name_edit.style.display = 'none';
+                        edit_survey_button.innerHTML = 'Edit'
+                        var new_survey_name = survey_name_edit.value;
+                        var url = '{{route('rename_survey', ['lecture' => $lecture_id, 'chapter' => $chapter_id,
+                                                        'survey' => $survey->id, 'new_survey_name' => 'new_name'])}}';
+                        url = url.replace('new_name', new_survey_name);
+                        window.location.href = url;
+                    } else {
+                        edit_survey_button.innerHTML = 'Save'
+                        survey_name_label.style.display = 'none'
+                        survey_name_edit.style.display = 'inline';
+                    }
                 }
             </script>
         @endif

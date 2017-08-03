@@ -49,7 +49,7 @@ class MainController extends Controller
      *
      * @return Response
      */
-    public function show_lectures()
+    public function get_lectures()
     {
         $user = Auth::user();
 
@@ -112,7 +112,15 @@ class MainController extends Controller
         if (request()->wantsJson()) {
             return response()->json(LectureModel::all());
         }
-        return view('main', ['lectures' => $result]);
+        return $result;
+    }
+
+    public function show_lectures() {
+        return view('main', ['lectures' => $this->get_lectures()]);
+    }
+
+    public function show_overview() {
+        return view('overview', ['lectures' => $this->get_lectures()]);
     }
 
     /**

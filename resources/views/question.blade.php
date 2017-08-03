@@ -50,10 +50,13 @@
             <div class="file-upload-area">
                 <span id="actual-image-text-response"> Actual Image: </span>
                 @if(isset($question) && $question->image_path)
-                    <img id="display-image-text-response" width="300" height="200" onerror="this.style.visibility='hidden'" src="<?php
-                    if ($question->is_text_response) {
-                        echo asset("storage/" . $question->image_path);
-                    }?>" ><br><br>
+                    @if($question->is_text_respone)
+                        <img id="display-image-text_response" width="300" height="200" onerror="this.style.visibility='hidden'"
+                             src="{{route('question_image',  ['lecture_id' => $lecture_id, 'filename' => $question->image_path])}}" ><br><br>
+                    @else
+                        <img id="display-image-text-response" width="300" height="200" onerror="this.style.visibility='hidden'"
+                             src="" ><br><br>
+                    @endif
                 @else
                     <img id="display-image-text-response" onerror="this.style.visibility='hidden'"  width="300" height="200" src=""><br><br>
                 @endif
@@ -104,10 +107,13 @@
                 <div class="file-upload-area">
                     <span id="actual-image-multiple-choice"> Actual Image: </span>
                     @if(isset($question) && $question->image_path)
-                        <img id="display-image-multiple-choice" width="300" height="200" onerror="this.style.visibility='hidden'" src="<?php
-                        if (!$question->is_text_response) {
-                            echo asset("storage/" . $question->image_path);
-                        }?>" ><br><br>
+                        @if(!$question->is_text_respone)
+                        <img id="display-image-multiple-choice" width="300" height="200" onerror="this.style.visibility='hidden'"
+                             src="{{route('question_image',  ['lecture_id' => $lecture_id, 'filename' => $question->image_path])}}" ><br><br>
+                        @else
+                            <img id="display-image-multiple-choice" width="300" height="200" onerror="this.style.visibility='hidden'"
+                                 src="" ><br><br>
+                        @endif
                     @else
                         <img id="display-image-multiple-choice" width="300" height="200" onerror="this.style.visibility='hidden'" src=""><br><br>
                     @endif
@@ -153,7 +159,7 @@
                 @endif
             </div>
             <!-- Add answer Button -->
-            <button id="add-answer-button"class="btn btn-primary" onclick="addQuestion(); return false;"> Add answer </button>
+            <button id="add-answer-button"class="btn btn-primary" onclick="addAnswer(); return false;"> Add answer </button>
             <br>
             <br>
 
@@ -208,7 +214,7 @@
     </script>
 
     <script>
-        function addQuestion(){
+        function addAnswer(){
             // Number of current possible answers
             var actualNumberOfPossibleAnswers = document.getElementById("container_possible_answers").childElementCount;
             // because every question is composed of 4 html tags

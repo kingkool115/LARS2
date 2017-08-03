@@ -11,10 +11,12 @@ namespace App\Http\Controllers;
 use App\AnswerModel;
 use App\QuestionModel;
 use App\SurveyModel;
-use Barryvdh\Debugbar\Facade as Debugbar;
+use App\FileEntryModel;
 use \Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Http\Response;
 
 class QuestionController extends Controller
 {
@@ -77,7 +79,6 @@ class QuestionController extends Controller
 
                 $question = QuestionModel::where(['survey_id' => $survey_id, "id" => $question_id])->first();
                 $answers = AnswerModel::where(['question_id' => $question_id])->get();
-
                 return view('question', compact( 'question', 'answers', 'one_answer', 'survey', 'lecture_id', 'chapter_id', 'survey_id'));
             } else {
                 return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
@@ -179,6 +180,26 @@ class QuestionController extends Controller
     }
 
     /**
+     * Return saved image to current question.
+     *
+     * @param $lecture_id to check permission.
+     * @param filename in local storage
+     * @return image.
+     * */
+    public function getImage($lecture_id, $filename) {
+        if ($this->hasPermission($lecture_id)) {
+            $entry = FileEntryModel::where('filename', '=', $filename)->firstOrFail();
+            $file = Storage::disk('local')->get($entry->filename);
+
+            return (new Response($file, 200))
+                ->header('Content-Type', $entry->mime);
+        } else {
+            // TODO: redirect to permission denied page
+            return "Permission denied";
+        }
+    }
+
+    /**
      * Create a question into questions-database when clicking on submit button in question-view.
      *
      * @param $post_request contains all necessary information about the posted question.
@@ -218,8 +239,16 @@ class QuestionController extends Controller
             $user = Auth::user();
             $path = 'question-images/users/' . $user['id'] . '/' . $survey_id .'/';
             // actually the file is stored in public/question-images ...
-            $file->storeAs('public/' . $path,  $question->id . "." . $ext);
-            $question->image_path = $path . '/' . $question->id . '.' . $ext;
+            Storage::disk('local')->put($file->getFilename().'.'.$ext,  File::get($file));
+            $entry = new FileEntryModel();
+            $entry->mime = $file->getClientMimeType();
+            $entry->original_filename = $file->getClientOriginalName();
+            $entry->filename = $file->getFilename().'.'.$ext;
+
+            $entry->save();
+
+            //$file->storeAs('public/' . $path,  $question->id . "." . $ext);
+            $question->image_path = $entry->filename;
         } else {
             $question->image_path = null;
         }

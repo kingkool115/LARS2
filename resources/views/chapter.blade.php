@@ -7,7 +7,9 @@
     @else
         <div id="topic">
             <a href="{{route('lecture', ['lecture_id' => $lecture->id])}}">Lecture {{$lecture->name}}</a><br>
-            {{$chapter->name}}
+            <button id="edit_chapter_button" type="submit" class="btn btn-primary" onclick="switchEditMode();">Rename</button>
+            <span id="chapter_name_label">{{$chapter->name}}</span>
+            <span><input id="chapter_name_edit" type="text" value="{{$chapter->name}}" style="display: none"></span>
         </div>
 
         <table class="surveys_table">
@@ -100,6 +102,30 @@
         var url = '{{route('remove_surveys', ['lecture_id' => $lecture->id, 'chapter->id' => $chapter->id])}}';
         // put slides_to_remove as parameter into the url
         window.location.href = url + "?surveys_to_remove=" + slides_to_remove;
+    }
+
+    /**
+     * Edit Button is clicked.
+     **/
+    function switchEditMode() {
+        var chapter_name_label = document.getElementById('chapter_name_label');
+        var chapter_name_edit = document.getElementById('chapter_name_edit');
+        var edit_chapter_button = document.getElementById('edit_chapter_button');
+
+        if (chapter_name_label.style.display == 'none') {
+            chapter_name_label.style.display = 'inline'
+            chapter_name_edit.style.display = 'none';
+            edit_chapter_button.innerHTML = 'Edit'
+            var new_chapter_name = chapter_name_edit.value;
+            var url = '{{route('rename_chapter', ['lecture' => $lecture->id, 'chapter' => $chapter->id,
+             'new_chapter_name' => 'new_name'])}}';
+            url = url.replace('new_name', new_chapter_name);
+            window.location.href = url;
+        } else {
+            edit_chapter_button.innerHTML = 'Save'
+            chapter_name_label.style.display = 'none'
+            chapter_name_edit.style.display = 'inline';
+        }
     }
 </script>
 @endsection
