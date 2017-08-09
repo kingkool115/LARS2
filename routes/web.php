@@ -83,7 +83,7 @@ Route::get('question_image/lecture/{lecture_id}/file/{filename}', 'QuestionContr
     ->name('question_image');
 
 // show all chapters of a lecture
-Route::get('lecture/{lecture_id}/chapters/', 'LectureController@showChapters')
+Route::get('lecture/{lecture_id}/chapters', 'LectureController@showChapters')
     ->name('lecture');
 
 // remove one or more chapters from a lecture

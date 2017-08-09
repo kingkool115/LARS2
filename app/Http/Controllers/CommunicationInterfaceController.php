@@ -417,7 +417,6 @@ class CommunicationInterfaceController extends Controller {
      * }
      **/
     public function evaluateAnswers() {
-
         $session_id = request()->input('session_id');
         $question_ids = request()->input("question_ids");
         if (isset($question_ids)) {

@@ -27,7 +27,7 @@ class CreateNewSurveyController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth.basic');
     }
 
     /**
@@ -46,6 +46,10 @@ class CreateNewSurveyController extends Controller
      * */
     function showCreateSurveyForm()
     {
+        if (request()->wantsJson()) {
+            return response("Ok.", 200);
+        }
+
         if ($this->isAuthenticated()) {
             //$surveys = DB::select($this->select_all_surveys_of_prof);
             //

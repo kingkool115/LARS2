@@ -110,12 +110,15 @@ class MainController extends Controller
         }
 
         if (request()->wantsJson()) {
-            return response()->json(LectureModel::all());
+            return LectureModel::all();
         }
         return $result;
     }
 
     public function show_lectures() {
+        if (request()->wantsJson()) {
+            return response()->json($this->get_lectures());
+        }
         return view('main', ['lectures' => $this->get_lectures()]);
     }
 
