@@ -10,9 +10,8 @@ use App\LectureModel;
 use App\util\Survey;
 use App\SurveyModel;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\Debugbar\Facade as Debugbar;
+use Illuminate\Http\Request;
 use \Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
 
 /**
  * Created by PhpStorm.
@@ -24,14 +23,6 @@ use Illuminate\Support\Facades\Request;
 class MainController extends Controller
 {
 
-    /**
-     * Create a new controller instance.
-     *
-     */
-    public function __construct()
-    {
-        $this->middleware('auth.basic');
-    }
 
     /**
      * This function checks if a user is logged in.
@@ -115,15 +106,27 @@ class MainController extends Controller
         return $result;
     }
 
+    /**
+     * Show lectures as links in a table.
+     **/
     public function show_lectures() {
         if (request()->wantsJson()) {
             return response()->json($this->get_lectures());
         }
-        return view('main', ['lectures' => $this->get_lectures()]);
+        if ($this->isAuthenticated()) {
+            return view('main', ['lectures' => $this->get_lectures()]);
+        }
+        return redirect('/login');
     }
 
+    /**
+     * Show a quick overview of the lectures.
+     **/
     public function show_overview() {
-        return view('overview', ['lectures' => $this->get_lectures()]);
+        if ($this->isAuthenticated()) {
+            return view('overview', ['lectures' => $this->get_lectures()]);
+        }
+        return redirect('/login');
     }
 
     /**

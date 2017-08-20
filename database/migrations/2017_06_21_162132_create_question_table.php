@@ -19,6 +19,7 @@ class CreateQuestionTable extends Migration
             $table->string('question');
             $table->string('image_path')->nullable();
             $table->boolean('is_text_response');
+            $table->boolean('is_multiple_choice')->default(0);
             $table->timestamps();
         });
     }

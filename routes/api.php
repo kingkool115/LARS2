@@ -13,6 +13,15 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
+
+Route::get('subscribe', 'CommunicationInterfaceController@subscribe');
+
+Route::get('unsubscribe', 'CommunicationInterfaceController@unsubscribe');
+
+Route::get('start_presentation_session', 'CommunicationInterfaceController@startPresentationSession');
+
+Route::get('push_question', 'CommunicationInterfaceController@pushQuestion');
+
+Route::post('answer_question', 'CommunicationInterfaceController@answerQuestion');
+
+Route::get('evaluate_answers', 'CommunicationInterfaceController@evaluateAnswers');

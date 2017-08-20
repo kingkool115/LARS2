@@ -27,6 +27,13 @@ use App\PushBots\PushBots;
  * **/
 class CommunicationInterfaceController extends Controller {
 
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct()
+    {
+        $this->middleware('api');
+    }
 
     /**
      * Decrypt message in /decrypt/{message}
@@ -215,9 +222,14 @@ class CommunicationInterfaceController extends Controller {
             $question_dict['lecture_id'] = $lecture_id;
             $question_dict['question'] = $question->question;
             $question_dict['is_text_response'] = $question->is_text_response;
-            if ($question->is_text_response != null) {
-
-                $question_dict['image_path'] = $question->is_text_response;
+            $question_dict['is_multi_select'] = $question->is_multi_select;
+            if ($question->image_path == null) {
+                $question_dict['image_path'] = null;
+            } else {
+                $url = route('public_image', ['file_name' => $question->image_path]);
+                // TODO: workaround to display picture on android device
+                $url = str_replace('localhost', '192.168.178.26', $url);
+                $question_dict['image_path'] = $url;
             }
 
             $result['question'] = $question_dict;
@@ -292,8 +304,12 @@ class CommunicationInterfaceController extends Controller {
 
         // 'lIco' is used to display image already in push notification, if there is any.
         if (isset($result['question']['image_path'])) {
-            $result['lIco'] = $result['question']['image_path'];
+            $result['bigPicture'] = $result['question']['image_path'];
         }
+
+        // Set lecture name as notification title
+        $lecture = LectureModel::where(["id" => $result['question']['lecture_id']])->first();
+        $result['nTitle'] = $lecture->name;
 
         // Push The notification with parameters
         // Notification Settings
@@ -349,15 +365,15 @@ class CommunicationInterfaceController extends Controller {
         $is_text_response = request()->input("is_text_response");
 
         if (!$this->studentSubscribed($student_id, $lecture_id)) {
-            return response("You are not allowed to answer this question", 403);
+            return response("Answer received. You are not allowed to answer this question", 403);
         }
 
         if (PushedQuestionModel::where(['question_id' => $question_id, 'session_id' => $session_id])->count() == 0) {
-            return resonse("There is no pushed question for your given answer.", 404);
+            return resonse("Answer received. There is no pushed question for your given answer.", 404);
         }
 
         if (PresentationSessionModel::where(['id' => $session_id, 'active' => false])->count() == 1) {
-            return response("Session for this question is already closed.", 200);
+            return response("Answer received. Session for this question is already closed.", 200);
         }
 
         if (request()->isJson() && $this->sessionExistsAndActive($session_id)) {
@@ -378,8 +394,9 @@ class CommunicationInterfaceController extends Controller {
                 $evaluate_questions_model_mc->answer_ids = request()->input("answer_ids");
                 $evaluate_questions_model_mc->save();
             }
-            return response("Answer sent.", 200);
+            return response("Answer received.", 200);
         }
+        return response()->json("Answer not sent.", 400);
     }
 
     /**

@@ -138,13 +138,14 @@ class QuestionController extends Controller
         //print_r($post_request);
         if ($this->hasPermission($lecture_id)) {
 
-            $question = $this->createQuestion($post_request, $survey_id, false);
 
+            $question = $this->createQuestion($post_request, $survey_id, false);
             // first delete all answers of that question, if available
             AnswerModel::where(['question_id' => $question->id])->delete();
 
             // iterate answers from post_request and save them to db.
             // answers = ['possible_answer_1' => 1, 'possible_answer_2' = 0, 'possible_answer_3' => 0]
+            $sum_correct_answers = 0;
             foreach ($post_request as $key => $value) {
                 if (starts_with($key, 'possible_answer_')) {
                     // which answer
@@ -162,6 +163,7 @@ class QuestionController extends Controller
                     $is_answer_correct = 0;
                     if (isset($post_request['is_answer_correct_' . $x])) {
                         $is_answer_correct = 1;
+                        $sum_correct_answers += 1;
                     }
 
                     $answer = new AnswerModel();
@@ -171,6 +173,9 @@ class QuestionController extends Controller
                     $answer->save();
                 }
             }
+
+            $question->is_multi_select = $sum_correct_answers > 1;
+            $question->save();
 
             // return to survey overview
             return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);

@@ -24,7 +24,7 @@ class PushBots
 		//set Default Push values
 		$this->pushData['msg'] = "Notification Message";
 		$this->pushData['badge'] = "+1";
-		$this->pushData['sound'] = "ping.aiff";
+		$this->pushData['vib'] = true;
 	}
 	
 	/**

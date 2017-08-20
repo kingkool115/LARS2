@@ -51,7 +51,7 @@ class Controller extends BaseController
     }
 
     public function getPublicImage($filename) {
-        $file = Storage::disk('public')->get($filename);
+        $file = Storage::disk('local')->get($filename);
         return (new Response($file, 200))->header('Content-Type', 'image');
     }
 }

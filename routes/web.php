@@ -11,9 +11,7 @@
 |
 */
 
-use App\LectureModel;
 use \Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
     if(Auth::guest())
@@ -33,7 +31,7 @@ Route::get('/lectures', 'MainController@show_lectures')
 Route::get('/overview', 'MainController@show_overview')
     ->name('overview');
 
-Route::get('/public_image/{filename}', 'Controller@getPublicImage')->name('public_image');
+Route::get('/public_image/question-images/{filename}', 'Controller@getPublicImage')->name('public_image');
 
 Route::post('/logout', 'Auth\LoginController@logout')
     ->name('logout');
@@ -131,19 +129,3 @@ Route::post('create_new_survey/existing_chapter/{lecture_id}/{chapter_id}', 'Cre
     ->name('post_new_survey_for_existing_chapter');
 
 // TODO: call an url to start a survey session
-
-// Push a question to device, when this url is called.
-Route::get('/api/push/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}',
-    'PushControllerController@pushQuestion');
-
-Route::get('subscribe', 'CommunicationInterfaceController@subscribe');
-
-Route::get('unsubscribe', 'CommunicationInterfaceController@unsubscribe');
-
-Route::get('start_presentation_session', 'CommunicationInterfaceController@startPresentationSession');
-
-Route::get('push_question', 'CommunicationInterfaceController@pushQuestion');
-
-Route::get('answer_question', 'CommunicationInterfaceController@answerQuestion');
-
-Route::get('evaluate_answers', 'CommunicationInterfaceController@evaluateAnswers');
