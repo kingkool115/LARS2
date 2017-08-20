@@ -16,8 +16,8 @@ class CreatePresentationSessionTable extends Migration
         //
         Schema::create('presentation_session', function (Blueprint $table) {
             $table->string('id')->unique();
-            $table->integer('lecture_id');
-            $table->integer('chapter_id');
+            $table->integer('lecture_id')->nullable();
+            $table->integer('chapter_id')->nullable();
             $table->boolean('active');
             $table->string('user_id');
             $table->timestamps();

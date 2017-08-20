@@ -148,6 +148,18 @@ class CommunicationInterfaceController extends Controller {
                 return response('Presentation session already exists.', 409);
             }
 
+            // when a user without account wants to start the presentation.
+            if (!isset($lecture_id) && !isset($chapter_id)) {
+                $presentation_session = new PresentationSessionModel();
+                $presentation_session->user_id = $user->id;
+                $presentation_session->lecture_id = null;
+                $presentation_session->chapter_id = null;
+                $presentation_session->id = $session_id;
+                $presentation_session->active = true;
+                $presentation_session->save();
+                return response('Presentation session started', 200);
+            }
+
             if (ChapterModel::where(['id' => $chapter_id, 'lecture_id' => $lecture_id])->count() == 0) {
                 return response('Your configured lecture/chapter for your presentation does not exist.', 406);
             }
