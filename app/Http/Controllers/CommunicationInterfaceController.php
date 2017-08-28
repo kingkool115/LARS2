@@ -66,10 +66,64 @@ class CommunicationInterfaceController extends Controller {
     }
 
     /**
+     * Gets the image url of an images.
+     *
+     * @param $question a question instance
+     * @return url
+     * **/
+    private function getImageUrlOfQuestion($question) {
+        if ($question->image_path == null) {
+            return null;
+        } else {
+            $url = route('public_image', ['file_name' => $question->image_path]);
+            // TODO: workaround to display picture on android device
+            $url = str_replace('localhost', '192.168.178.26', $url);
+            $url = str_replace('127.0.0.1', '192.168.178.26', $url);
+            return $url;
+        }
+    }
+    
+    /**
+     * Get all available Lectures from all users.
+     * This is needed when a user without an account wants to start a powerpoint presentation.
+     * He selects the correct lecture so that the students get the questions if they subscribed for that lectures.
+     *
+     * @return all available lectures from db.
+     * */
+    public function getAllAvailableLectures() {
+        if (request()->isJson()) {
+            $user = User::where(['email' => request()->input("user_email")])->first();
+            if (isset($user)) {
+                return response()->json(LectureModel::all()->toArray());
+            }
+            return response("No permission to get all lectures", 403);
+        } else {
+            return  response('Bad Request', 400);
+        }
+    }
+
+    /**
+     * Get all lectures of a chapter without being logged in.
+     *
+     * @return a list of chapters of a certain lecture
+     * **/
+    public function getChaptersOfLectureNoAuth($lecture_id) {
+        if (request()->isJson()) {
+            $user = User::where(['email' => request()->input("user_email")])->first();
+            if (isset($user)) {
+                return response()->json(ChapterModel::where(["lecture_id" => $lecture_id])->get()->toArray());
+            }
+            return response("No permission to get all lectures", 403);
+        } else {
+            return  response('Bad Request', 400);
+        }
+    }
+
+    /**
      * Handles route /subscribe/
      *    * -> encrypted json
      * {
-     *      lecture_id: 6,
+     *      lecture_ids: [3,4,5],
      *      student_id: 5
      * }
      *
@@ -81,13 +135,15 @@ class CommunicationInterfaceController extends Controller {
         // TODO: check if pushbots id (student id) exists before subscribing
         // TODO: im json content ist die student_id verschlüsselt enthalten
         if (request()->isJson()) {
-            $lecture_id = request()->input("lecture_id");
+            $lecture_ids = request()->input("lecture_ids");
             $student_id = request()->input('student_id');
 
-            $subscription_model = new SubscriptionModel();
-            $subscription_model->lecture_id = $lecture_id;
-            $subscription_model->student_id = $student_id;
-            $subscription_model->save();
+            foreach ($lecture_ids as $lecture_id) {
+                $subscription_model = new SubscriptionModel();
+                $subscription_model->lecture_id = $lecture_id;
+                $subscription_model->student_id = $student_id;
+                $subscription_model->save();
+            }
             return response('Successfully subscribed', 200);
         }
         return response('Bad Request', 400);
@@ -97,7 +153,7 @@ class CommunicationInterfaceController extends Controller {
      * Handles route /unsubscribe
      *    * -> encrypted json
      * {
-     *      lecture_id: 6,
+     *      lecture_ids: [3,4,5],
      *      student_id: 5
      * }
      *
@@ -106,16 +162,16 @@ class CommunicationInterfaceController extends Controller {
      **/
     public function unsubscribe() {
         if (request()->isJson()) {
-            $lecture_id = request()->input("lecture_id");
+            $lecture_ids = request()->input("lecture_ids");
             $student_id = request()->input('student_id');
 
-            $subscriptionExists = SubscriptionModel::
-                                        where(['lecture_id' => $lecture_id, 'student_id' => $student_id])->count() == 1;
-            if (!$subscriptionExists) {
-                return response('Subscription does not exists.', 400);
+            foreach ($lecture_ids as $lecture_id) {
+                $subscriptionExists = SubscriptionModel::where(['lecture_id' => $lecture_id, 'student_id' => $student_id])
+                        ->count() == 1;
+                if ($subscriptionExists) {
+                    SubscriptionModel::where(['lecture_id' => $lecture_id, 'student_id' => $student_id])->delete();
+                }
             }
-
-            SubscriptionModel::where(['lecture_id' => $lecture_id, 'student_id' => $student_id])->delete();
             return response('Unsubscribed', 200);
         }
         return response('Bad Request', 400);
@@ -196,6 +252,7 @@ class CommunicationInterfaceController extends Controller {
         $question_id = request()->input("question_id");
         $user = User::where(['email' => request()->input("user_email")])->first();
 
+        //return response()->json(['lecture' => $lecture_id, 'session_id' => $session_id, 'question_id' => $question_id, 'user' => $user], 200);
         if ($user == null) {
             return response('No permission to push questions.', 403);
         }
@@ -235,14 +292,7 @@ class CommunicationInterfaceController extends Controller {
             $question_dict['question'] = $question->question;
             $question_dict['is_text_response'] = $question->is_text_response;
             $question_dict['is_multi_select'] = $question->is_multi_select;
-            if ($question->image_path == null) {
-                $question_dict['image_path'] = null;
-            } else {
-                $url = route('public_image', ['file_name' => $question->image_path]);
-                // TODO: workaround to display picture on android device
-                $url = str_replace('localhost', '192.168.178.26', $url);
-                $question_dict['image_path'] = $url;
-            }
+            $question_dict['image_path'] = $this->getImageUrlOfQuestion($question);
 
             $result['question'] = $question_dict;
 
@@ -381,7 +431,7 @@ class CommunicationInterfaceController extends Controller {
         }
 
         if (PushedQuestionModel::where(['question_id' => $question_id, 'session_id' => $session_id])->count() == 0) {
-            return resonse("Answer received. There is no pushed question for your given answer.", 404);
+            return response("Answer received. There is no pushed question for your given answer.", 404);
         }
 
         if (PresentationSessionModel::where(['id' => $session_id, 'active' => false])->count() == 1) {
@@ -467,6 +517,7 @@ class CommunicationInterfaceController extends Controller {
                 $question_eval['question_id'] = $question_id;
                 $question = QuestionModel::where(['id' => $question_id])->first();
                 $question_eval['question'] = $question->question;
+                $question_eval['image_path'] = $this->getImageUrlOfQuestion($question);
 
                 // it's a text response question
                 if ($answers->count() == 1 && $answers->first()->is_correct) {

@@ -13,10 +13,13 @@ use Illuminate\Http\Request;
 |
 */
 
+Route::get('all_lectures', 'CommunicationInterfaceController@getAllAvailableLectures');
 
-Route::get('subscribe', 'CommunicationInterfaceController@subscribe');
+Route::get('lecture/{lecture_id}/all_chapters', 'CommunicationInterfaceController@getChaptersOfLectureNoAuth');
 
-Route::get('unsubscribe', 'CommunicationInterfaceController@unsubscribe');
+Route::post('subscribe', 'CommunicationInterfaceController@subscribe');
+
+Route::post('unsubscribe', 'CommunicationInterfaceController@unsubscribe');
 
 Route::get('start_presentation_session', 'CommunicationInterfaceController@startPresentationSession');
 
