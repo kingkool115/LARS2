@@ -28,3 +28,5 @@ Route::get('push_question', 'CommunicationInterfaceController@pushQuestion');
 Route::post('answer_question', 'CommunicationInterfaceController@answerQuestion');
 
 Route::get('evaluate_answers', 'CommunicationInterfaceController@evaluateAnswers');
+
+Route::get('get_answers_of_one_question/{question_id}/{session_id}', 'CommunicationInterfaceController@getAnswersOfOneQuestion');

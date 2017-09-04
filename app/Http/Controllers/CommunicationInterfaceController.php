@@ -62,7 +62,7 @@ class CommunicationInterfaceController extends Controller {
      * @return true if student is subscribed, else false.
      * */
     private function studentSubscribed($student_id, $lecture_id) {
-        return SubscriptionModel::where(['student_id' => $student_id, 'lecture_id' => $lecture_id])->count() == 1;
+        return SubscriptionModel::where(['student_id' => $student_id, 'lecture_id' => $lecture_id])->count() > 0;
     }
 
     /**
@@ -290,6 +290,7 @@ class CommunicationInterfaceController extends Controller {
             $question_dict['id'] = $question->id;
             $question_dict['lecture_id'] = $lecture_id;
             $question_dict['question'] = $question->question;
+            $question_dict['question_uid'] = uniqid();
             $question_dict['is_text_response'] = $question->is_text_response;
             $question_dict['is_multi_select'] = $question->is_multi_select;
             $question_dict['image_path'] = $this->getImageUrlOfQuestion($question);
@@ -310,12 +311,14 @@ class CommunicationInterfaceController extends Controller {
             $result['answers'] = $answers;
 
             // push json to all android devices
-            $pushbots_result = $this->pushBotpush($result);
+            $this->pushBotpush($result);
 
             // insert into pushed_question table
             $pushed_question_model = new PushedQuestionModel();
-            $pushed_question_model->lecture_id = $lecture_id;
+            $pushed_question_model->lecture_id = $result['question']['lecture_id'];
             $pushed_question_model->session_id = $session_id;
+            // needed to identify a question when opening it by notification on android phone
+            $pushed_question_model->question_uid = $result['question']['question_uid'];
             $pushed_question_model->question_id = $question_id;
             $pushed_question_model->save();
 
@@ -511,74 +514,101 @@ class CommunicationInterfaceController extends Controller {
                     continue;
                 }
 
-                // iterate mc questions
-                $answers = AnswerModel::where(['question_id' => $question_id])->get();
-                $question_eval = [];
-                $question_eval['question_id'] = $question_id;
-                $question = QuestionModel::where(['id' => $question_id])->first();
-                $question_eval['question'] = $question->question;
-                $question_eval['image_path'] = $this->getImageUrlOfQuestion($question);
-
-                // it's a text response question
-                if ($answers->count() == 1 && $answers->first()->is_correct) {
-                    $eval_tr_answers = EvaluateQuestionsTrModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
-                    $answers_for_this_question = [];
-
-                    // iterate answers from evaluation table
-                    foreach ($eval_tr_answers as $tr_answer) {
-
-                        // iterate already collected answers
-                        foreach ($answers_for_this_question as $key => $value) {
-                            // this answer already exists in collected answers -> increment counter
-                            if ($tr_answer->answer == $key) {
-                                $answers_for_this_question[$tr_answer->answer] += 1;
-                            }
-                        }
-
-                        // if answer was not found in already collected answers -> make a new entry with counter = 1
-                        if (!isset($answers_for_this_question[$tr_answer->answer])) {
-                            $answers_for_this_question[$tr_answer->answer] = 1;
-                        }
-                    }
-                    $question_eval['is_text_response'] = true;
-                    $question_eval['answers'] = $answers_for_this_question;
-                }
-
-                // it's a multiple choice question
-                if ($answers->count() > 1) {
-                    $eval_mc_answers = EvaluateQuestionsMcModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
-                    $answers_for_this_question = [];
-
-                    // fill answers for this question with all possible answers and set their counter to zero
-                    foreach ($answers as $answer) {
-                        $answers_for_this_question[$answer->answer] = 0;
-                    }
-
-                    // iterate all multiple choice answers from each student
-                    foreach ($eval_mc_answers as $mc_answer) {
-                        $mc_ids = explode(',', $mc_answer->answer_ids);
-                        // iterate all given answer ids of the student for this question
-                        foreach ($mc_ids as $id) {
-
-                            // iterate the answers that were init before
-                            foreach ($answers as $answer) {
-
-                                // student selected this answer -> increment its counter
-                                if ($answer->id == $id) {
-                                    $answers_for_this_question[$answer->answer] += 1;
-                                }
-                            }
-                        }
-                    }
-                    $question_eval['is_text_response'] = false;
-                    $question_eval['answers'] = $answers_for_this_question;
-                }
-
                 // add to result
-                $result[] = $question_eval;
+                $result[] = $this->getAnswersOfOneQuestion($question_id, $session_id);
             }
 
             return response()->json($result);
         }
+    }
+
+
+    /**
+     * Handles route /get_answers_of_one_question/{question_id}/{session_id}
+     * Get evaluation of one single question.
+     *
+     * @param $question_id id of question
+     * @param $session_id id of session.
+     * @return this:
+     *
+     *          {
+                    "question_id": 5,
+     *              "is_text_response": false,
+     *              "answers":
+     *                  [
+     *                      "answer1": 4,
+     *                      "answer2": 8,
+     *                      "answer3": 7
+     *                  ]
+     *          }
+     */
+    public function getAnswersOfOneQuestion($question_id, $session_id) {
+
+        // iterate mc questions
+        $answers = AnswerModel::where(['question_id' => $question_id])->get();
+        $question_eval = [];
+        $question_eval['question_id'] = $question_id;
+        $question = QuestionModel::where(['id' => $question_id])->first();
+        $question_eval['question'] = $question->question;
+        $question_eval['image_path'] = $this->getImageUrlOfQuestion($question);
+
+        // it's a text response question
+        if ($answers->count() == 1 && $answers->first()->is_correct) {
+            $eval_tr_answers = EvaluateQuestionsTrModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
+            $answers_for_this_question = [];
+
+            // iterate answers from evaluation table
+            foreach ($eval_tr_answers as $tr_answer) {
+
+                // iterate already collected answers
+                foreach ($answers_for_this_question as $key => $value) {
+                    // this answer already exists in collected answers -> increment counter
+                    if ($tr_answer->answer == $key) {
+                        $answers_for_this_question[$tr_answer->answer] += 1;
+                    }
+                }
+
+                // if answer was not found in already collected answers -> make a new entry with counter = 1
+                if (!isset($answers_for_this_question[$tr_answer->answer])) {
+                    $answers_for_this_question[$tr_answer->answer] = 1;
+                }
+            }
+            $question_eval['is_text_response'] = true;
+            arsort($answers_for_this_question);
+            $question_eval['answers'] = $answers_for_this_question;
+        }
+
+        // it's a multiple choice question
+        if ($answers->count() > 1) {
+            $eval_mc_answers = EvaluateQuestionsMcModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
+            $answers_for_this_question = [];
+
+            // fill answers for this question with all possible answers and set their counter to zero
+            foreach ($answers as $answer) {
+                $answers_for_this_question[$answer->answer] = 0;
+            }
+
+            // iterate all multiple choice answers from each student
+            foreach ($eval_mc_answers as $mc_answer) {
+                $mc_ids = explode(',', $mc_answer->answer_ids);
+                // iterate all given answer ids of the student for this question
+                foreach ($mc_ids as $id) {
+
+                    // iterate the answers that were init before
+                    foreach ($answers as $answer) {
+
+                        // student selected this answer -> increment its counter
+                        if ($answer->id == $id) {
+                            $answers_for_this_question[$answer->answer] += 1;
+                        }
+                    }
+                }
+            }
+            arsort($answers_for_this_question);
+            $question_eval['is_text_response'] = false;
+            $question_eval['answers'] = $answers_for_this_question;
+        }
+
+        return $question_eval;
     }
 }
