@@ -10,12 +10,12 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 
 
-class EvaluateQuestionsTrModel extends Model
+class EvaluateQuestionsModel extends Model
 {
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'evaluate_questions_tr';
+    protected $table = 'evaluate_questions';
 }

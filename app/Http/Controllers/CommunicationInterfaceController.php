@@ -12,7 +12,7 @@ namespace App\Http\Controllers;
 use App\AnswerModel;
 use App\ChapterModel;
 use App\EvaluateQuestionsMcModel;
-use App\EvaluateQuestionsTrModel;
+use App\EvaluateQuestionsModel;
 use App\LectureModel;
 use App\PresentationSessionModel;
 use App\PushedQuestionModel;
@@ -194,7 +194,6 @@ class CommunicationInterfaceController extends Controller {
             $user = User::where(['email' => request()->input("user_email")])->first();
             $session_id = request()->input('session_id');
             $lecture_id = request()->input('lecture_id');
-            $chapter_id = request()->input('chapter_id');
 
             if (!isset($user)) {
                     return response('Not allowed to start presentation', 403);
@@ -205,7 +204,7 @@ class CommunicationInterfaceController extends Controller {
             }
 
             // when a user without account wants to start the presentation.
-            if (!isset($lecture_id) && !isset($chapter_id)) {
+            if (!isset($lecture_id)) {
                 $presentation_session = new PresentationSessionModel();
                 $presentation_session->user_id = $user->id;
                 $presentation_session->lecture_id = null;
@@ -216,14 +215,9 @@ class CommunicationInterfaceController extends Controller {
                 return response('Presentation session started', 200);
             }
 
-            if (ChapterModel::where(['id' => $chapter_id, 'lecture_id' => $lecture_id])->count() == 0) {
-                return response('Your configured lecture/chapter for your presentation does not exist.', 406);
-            }
-
             $presentation_session = new PresentationSessionModel();
             $presentation_session->user_id = $user->id;
             $presentation_session->lecture_id = $lecture_id;
-            $presentation_session->chapter_id = $chapter_id;
             $presentation_session->id = $session_id;
             $presentation_session->active = true;
             $presentation_session->save();
@@ -442,23 +436,14 @@ class CommunicationInterfaceController extends Controller {
         }
 
         if (request()->isJson() && $this->sessionExistsAndActive($session_id)) {
-            if ($is_text_response) {
-                // insert into evaluate_questions_tr table
-                $evaluate_questions_model_tr = new EvaluateQuestionsTrModel();
-                $evaluate_questions_model_tr->student_id = $student_id;
-                $evaluate_questions_model_tr->session_id = $session_id;
-                $evaluate_questions_model_tr->question_id = $question_id;
-                $evaluate_questions_model_tr->answer = request()->input("answer");
-                $evaluate_questions_model_tr->save();
-            } else {
-                // insert into evaluate_questions_mc table
-                $evaluate_questions_model_mc = new EvaluateQuestionsMcModel();
-                $evaluate_questions_model_mc->student_id = $student_id;
-                $evaluate_questions_model_mc->session_id = $session_id;
-                $evaluate_questions_model_mc->question_id = $question_id;
-                $evaluate_questions_model_mc->answer_ids = request()->input("answer_ids");
-                $evaluate_questions_model_mc->save();
-            }
+            // insert into evaluate_questions table
+            $evaluate_questions_model = new EvaluateQuestionsModel();
+            $evaluate_questions_model->student_id = $student_id;
+            $evaluate_questions_model->session_id = $session_id;
+            $evaluate_questions_model->question_id = $question_id;
+            $evaluate_questions_model->is_text_response = $is_text_response;
+            $evaluate_questions_model->answer = request()->input("answer");
+            $evaluate_questions_model->save();
             return response("Answer received.", 200);
         }
         return response()->json("Answer not sent.", 400);
@@ -553,8 +538,8 @@ class CommunicationInterfaceController extends Controller {
         $question_eval['image_path'] = $this->getImageUrlOfQuestion($question);
 
         // it's a text response question
-        if ($answers->count() == 1 && $answers->first()->is_correct) {
-            $eval_tr_answers = EvaluateQuestionsTrModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
+        if ($question->is_text_response) {
+            $eval_tr_answers = EvaluateQuestionsModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
             $answers_for_this_question = [];
 
             // iterate answers from evaluation table
@@ -576,11 +561,9 @@ class CommunicationInterfaceController extends Controller {
             $question_eval['is_text_response'] = true;
             arsort($answers_for_this_question);
             $question_eval['answers'] = $answers_for_this_question;
-        }
-
         // it's a multiple choice question
-        if ($answers->count() > 1) {
-            $eval_mc_answers = EvaluateQuestionsMcModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
+        } else {
+            $eval_mc_answers = EvaluateQuestionsModel::where(['question_id' => $question_id, "session_id" => $session_id])->get();
             $answers_for_this_question = [];
 
             // fill answers for this question with all possible answers and set their counter to zero
@@ -590,7 +573,8 @@ class CommunicationInterfaceController extends Controller {
 
             // iterate all multiple choice answers from each student
             foreach ($eval_mc_answers as $mc_answer) {
-                $mc_ids = explode(',', $mc_answer->answer_ids);
+                // if it's a multiple choice question the answer is composed of answer ids seperated by commas -> 27,6,8
+                $mc_ids = explode(',', $mc_answer->answer);
                 // iterate all given answer ids of the student for this question
                 foreach ($mc_ids as $id) {
 

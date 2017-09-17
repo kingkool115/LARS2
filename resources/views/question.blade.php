@@ -132,7 +132,7 @@
                             <label id="correct_answer_{{$x}}" for="correct_answer">Answer {{$x}}</label>
                             <div style="float: right">
                                 <input type="checkbox" name="is_answer_correct_{{$x}}" id="correct_answer_checkbox_{{$x}}" > correct
-                                <input type="image" class="remove_icon" src="{{route('public_image', ['filename' => 'remove_icon.png'])}}" onclick="removeQuestion({{$x + 1}}); return false;" />
+                                <input type="image" class="remove_icon" src="<?php echo (url('/remove_icon.png')); ?>" onclick="removeQuestion({{$x + 1}}); return false;" />
                             </div>
                             <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x}}" id="possible_answer_{{$x}}"></textarea>
                             <br>
@@ -149,7 +149,7 @@
                                 @else
                                     <input type="checkbox" name="is_answer_correct_{{$x + 1}}" id="correct_answer_checkbox_{{$x + 1}}" > correct
                                 @endif
-                                    <input type="image" class="remove_icon" src="{{route('public_image', ['filename' => 'remove_icon.png'])}}" onclick="removeQuestion({{$x + 1}}); return false;"/>
+                                    <input type="image" class="remove_icon" src="<?php echo (url('/remove_icon.png')); ?>" onclick="removeQuestion({{$x + 1}}); return false;"/>
                             </div>
                             <textarea rows="1" cols="50" class="form-control" name="possible_answer_{{$x + 1}}" id="possible_answer_{{$x + 1}}"
                             >@if (isset($question->id) && !$question->is_text_response){{$answer->answer}}@endif</textarea>
@@ -247,7 +247,7 @@
             var removeButton = document.createElement("input");
             removeButton.type = "image";
             removeButton.className = "remove_icon";
-            removeButton.src = "{{route('public_image', ['filename' => 'remove_icon.png'])}}";
+            removeButton.src="{{ (url('/remove_icon.png'))}}";
             removeButton.addEventListener('click', function() {
                 removeQuestion(newAnswerIndex);
             }, false);

@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 use App\ChapterModel;
 use App\QuestionModel;
 use App\SurveyModel;
+use App\AnswerModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
 
@@ -121,5 +122,64 @@ class SurveyController extends Controller
         }
 
         return redirect()->route('survey', ['lecture_id' => $lecture_id, 'chapter_id' => $chapter_id, 'survey_id' => $survey_id]);
+    }
+
+    /**
+     * This function iks called by route
+     * lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_new_question.
+     *
+     * @param $lecture_id   id of lecture the question belongs to.
+     * @param $chapter_id   id of chapter the question belongs to.
+     * @param $survey_id    id of survey the question belongs to.
+     * @return question view to edit new question.
+     **/
+    public function createNewQuestion($lecture_id, $chapter_id, $survey_id) {
+        // check if user has permission for this lecture
+        if ($this->hasPermission($lecture_id)) {
+
+            // check if lecture, chapter, survey, slide_number belong to each other.
+            if ($this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
+                $survey_name = SurveyModel::where('id', $survey_id)->first();
+                $survey_name = $survey_name->name;
+                print_r($survey_name);
+                return view('question', compact('edit_form',  'survey_name', 'lecture_id', 'chapter_id', 'survey_id'));
+            }
+            else {
+                return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
+            }
+        }
+        // TODO: redirect to permission denied page
+        return "Permission denied";
+    }
+
+    /**
+     * This function routes to lecture/{lecture_id}/chapter/[chapter_id}/survey/{survey_id}/slide_number/{question_id}
+     *
+     * @param $lecture_id the id of the lecture this question belongs to.
+     * @param $chapter_id the id of the chapter this question belongs to.
+     * @param $survey_id this question belongs to.
+     * @param $question_id id of the question.
+     * @return view question.blade.php
+     */
+    public function editQuestion($lecture_id, $chapter_id, $survey_id, $question_id)
+    {
+        $survey = SurveyModel::where(['id' => $survey_id])->first();
+
+        // check if user has permission for this lecture
+        if ($this->hasPermission($lecture_id)) {
+
+
+            // check if lecture, chapter, survey, slide_number belong to each other.
+            if ($this->checkLectureDependencies($lecture_id, $chapter_id, $survey_id)) {
+
+                $question = QuestionModel::where(['survey_id' => $survey_id, "id" => $question_id])->first();
+                $answers = AnswerModel::where(['question_id' => $question_id])->get();
+                return view('question', compact( 'question', 'answers', 'survey', 'lecture_id', 'chapter_id', 'survey_id'));
+            } else {
+                return "Wrong url constellation. This lecture-chapter-survey-slide_number relation does not exist.";
+            }
+        }
+        // TODO: redirect to permission denied page
+        return "Permission denied";
     }
 }

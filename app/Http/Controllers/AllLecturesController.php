@@ -20,7 +20,7 @@ use \Illuminate\Support\Facades\Auth;
  * Time: 20:36
  */
 
-class MainController extends Controller
+class AllLecturesController extends Controller
 {
 
 

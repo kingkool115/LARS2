@@ -13,11 +13,12 @@ class CreateEvalutateQuestionsTrTable extends Migration
      */
     public function up()
     {
-        Schema::create('evaluate_questions_tr', function (Blueprint $table) {
+        Schema::create('evaluate_questions', function (Blueprint $table) {
             $table->increments('id');
             $table->string('student_id');
             $table->integer('question_id');
             $table->string('session_id');
+            $table->boolean('is_text_response');
             $table->string('answer');
             $table->timestamps();
         });

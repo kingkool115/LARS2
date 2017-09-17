@@ -25,10 +25,10 @@ Auth::routes();
 
 Route::get('api/switch_slide/lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'PushControllerController@switchSlide');
 
-Route::get('/lectures', 'MainController@show_lectures')
+Route::get('/lectures', 'AllLecturesController@show_lectures')
     ->name('lectures');
 
-Route::get('/overview', 'MainController@show_overview')
+Route::get('/overview', 'AllLecturesController@show_overview')
     ->name('overview');
 
 Route::get('/public_image/question-images/{filename}', 'Controller@getPublicImage')->name('public_image');
@@ -41,11 +41,11 @@ Route::get('verify/{email}/{verifyToken}', 'Auth\RegisterController@sendEmailDon
     ->name('sendEmailDone');
 
 // remove one or more lectures
-Route::get('lecture/remove_lectures/', 'MainController@removeLectures')
+Route::get('lecture/remove_lectures/', 'AllLecturesController@removeLectures')
     ->name('remove_lectures');
 
 // create a new lecture
-Route::get('lecture/{lecture_name}', 'MainController@createNewLecture')
+Route::get('lecture/{lecture_name}', 'AllLecturesController@createNewLecture')
     ->name('create_lecture');
 
 // rename lecture
@@ -69,11 +69,11 @@ Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/remove_
     ->name('remove_questions');
 
 // edit a question
-Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'QuestionController@editQuestion')
+Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/question/{question_id}', 'SurveyController@editQuestion')
     ->name('question');
 
 // edit a question
-Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_new_question', 'QuestionController@createNewQuestion')
+Route::get('lecture/{lecture_id}/chapter/{chapter_id}/survey/{survey_id}/create_new_question', 'SurveyController@createNewQuestion')
     ->name('create_new_question');
 
 //get image of question
