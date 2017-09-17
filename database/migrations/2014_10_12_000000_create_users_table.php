@@ -26,8 +26,10 @@ class CreateUsersTable extends Migration
 
         DB::table('users')->insert(
             array(
+                'name' => 'presentation_user',
+                'password' => '',
                 'email' => 'presentation_user',
-                'verified' => true
+                'status' => true
             )
         );
     }

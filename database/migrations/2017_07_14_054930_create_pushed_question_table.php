@@ -15,7 +15,7 @@ class CreatePushedQuestionTable extends Migration
     {
         Schema::create('pushed_question', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('question_id');
+            $table->string('question_uid');
             $table->string('question_id');
             $table->string('session_id');
             $table->integer('lecture_id');

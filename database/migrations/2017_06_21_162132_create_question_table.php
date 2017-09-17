@@ -20,6 +20,7 @@ class CreateQuestionTable extends Migration
             $table->string('image_path')->nullable();
             $table->boolean('is_text_response');
             $table->boolean('is_multiple_choice')->default(0);
+            $table->boolean('is_multi_select')->default(0);
             $table->timestamps();
         });
     }
